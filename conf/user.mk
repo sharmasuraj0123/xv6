@@ -1,2 +1,2 @@
 # Your NetID below
-NETID=your-netid
+NETID= 110134817 109606910
