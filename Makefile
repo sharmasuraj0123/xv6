@@ -222,7 +222,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
 
 realclean: clean
-	rm -rf lab$(LAB).tar.gz
+	@rm -rf lab$(LAB).tar.gz
 
 handin-check:
 	@if [ `git status --porcelain | wc -l` != 0 ] ; then \
