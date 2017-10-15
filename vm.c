@@ -365,7 +365,7 @@ cowuvm(pde_t *pgdir, uint sz)
     /* Changing the PTE to read only */
     pte = pte & 0xfffffffc;
     /*Adding COW to each entry*/
-    pte +=PTE_COW;
+    pte = pte | PTE_COW;
 
     /*Increase the reference count for each page*/
     void * pfa = pte & 0x11111000
