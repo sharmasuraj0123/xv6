@@ -359,18 +359,16 @@ cowuvm(pde_t *pgdir, uint sz)
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
 
+    /*COW Implementation*/
     /* Changing the PTE to read only*/
     pte = pte & 0xfffc;
     /*Adding COW to each entry*/
     pte +=PTE_COW;
-
-    pa = PTE_ADDR(*pte);
-    flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
-      goto bad;
+    
+    /*Increase the reference count for each page*/
+    /*Note : Have to check again whether the input
+    *for the method is pte*/
+    kincrement(pte);
   }
   return d;
 }
