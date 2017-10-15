@@ -70,7 +70,7 @@ kfree(char *v)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = (struct run*)v;
- if(run->kpg_count !=1)
+ if(r->kpg_count !=1)
 	panic("kfree");
   r->kpg_count =0;
   r->next = kmem.freelist;
