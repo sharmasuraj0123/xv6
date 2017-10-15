@@ -361,14 +361,15 @@ cowuvm(pde_t *pgdir, uint sz)
 
     /*COW Implementation*/
     /* Changing the PTE to read only*/
-    pte = pte & 0xfffc;
+    pte = pte & 0xfffffffc;
     /*Adding COW to each entry*/
     pte +=PTE_COW;
-    
+
     /*Increase the reference count for each page*/
-    /*Note : Have to check again whether the input
-    *for the method is pte*/
-    kincrement(pte);
+    void * pfa = pte & 0x11111000
+    kincrement(pfa);
+    //Note : Have to check again whether the input for kincrement
+
   }
   return d;
 }
