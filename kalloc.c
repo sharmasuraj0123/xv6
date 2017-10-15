@@ -15,7 +15,7 @@ extern char end[]; // first address after kernel loaded from ELF file
 
 struct run {
   struct run *next;
-  int kpg_count;
+  int kpg_count; // This will take care of the count.
 };
 
 struct {
@@ -101,7 +101,7 @@ kalloc(void)
 // This is a helper function to increment the count
 // of the page.
 void kincrement(char * v){
- 
+
   struct run *r;
 
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
@@ -122,7 +122,7 @@ void kincrement(char * v){
 // This is a helper function to decrement the count
 // of the page.
 void kdecrement(char * v){
- 
+
   struct run *r;
 
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
@@ -139,4 +139,3 @@ void kdecrement(char * v){
   if(kmem.use_lock)
     release(&kmem.lock);
 }
-
