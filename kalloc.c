@@ -15,6 +15,7 @@ extern char end[]; // first address after kernel loaded from ELF file
 
 struct run {
   struct run *next;
+  int kpg_count;
 };
 
 struct {
@@ -69,6 +70,9 @@ kfree(char *v)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = (struct run*)v;
+ if(run->kpg_count !=1)
+	panic("kfree");
+  r->kpg_count =0;
   r->next = kmem.freelist;
   kmem.freelist = r;
   if(kmem.use_lock)
@@ -88,8 +92,51 @@ kalloc(void)
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
+   r->kpg_count =1;
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
+}
+
+// This is a helper function to increment the count
+// of the page.
+void kincrement(char * v){
+ 
+  struct run *r;
+
+  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+    panic("kfree");
+
+ // Fill with junk to catch dangling refs.
+  memset(v, 1, PGSIZE);
+
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+
+  r = (struct run*)v;
+  r->kpg_count++;
+  if(kmem.use_lock)
+    release(&kmem.lock);
+}
+
+// This is a helper function to decrement the count
+// of the page.
+void kdecrement(char * v){
+ 
+  struct run *r;
+
+  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+    panic("kfree");
+
+ // Fill with junk to catch dangling refs.
+  memset(v, 1, PGSIZE);
+
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+
+  r = (struct run*)v;
+  r->kpg_count--;
+  if(kmem.use_lock)
+    release(&kmem.lock);
 }
 
