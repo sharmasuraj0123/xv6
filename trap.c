@@ -46,6 +46,39 @@ trap(struct trapframe *tf)
   }
 
   if(tf->trapno == T_PGFLT){
+
+    // Check that the page has write fault for the user
+    // NOTE : ADD the the different modes.
+    if (tf->err != FEC_WR)
+      exit();
+
+    //Obtain the virtual adress of the page.
+    uint va = rcr2();
+    uint pa , flags;
+    pte_t *pte , *d;
+    char * mem;
+
+    // Calculating the PTE from its virtual address
+    if((pte = walkpgdir(myproc()->pgdir, (void *) va, 0)) == 0)
+      panic("pagefault: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("pagefault: page not present");
+
+    if(*pte & PTE_COW){
+      pa = PTE_ADDR(*pte);
+      flags = PTE_FLAGS(*pte);
+      if((mem = kalloc()) == 0)
+        panic("LOL");
+      memmove(mem, (char*)P2V(pa), PGSIZE);
+      if(mappages(d, (void*)va, PGSIZE, V2P(mem), flags) < 0)
+        panic("lol2");
+    }
+    else{
+      //Exit it
+      panic("Page Fault Error");
+    }
+
+
     if(myproc()->killed)
       exit();
         /*Fill in the implementation here.*/
