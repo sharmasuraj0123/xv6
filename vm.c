@@ -348,7 +348,7 @@ cowuvm(pde_t *pgdir, uint sz)
 {
   pde_t *d;
   pte_t *pte;
-
+  int i;
 
   if((d = setupkvm()) == 0)
     return 0;
