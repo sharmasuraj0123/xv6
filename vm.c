@@ -348,7 +348,7 @@ cowuvm(pde_t *pgdir, uint sz)
 {
   pde_t *d;
   pte_t *pte;
-
+  int i;
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -367,9 +367,9 @@ cowuvm(pde_t *pgdir, uint sz)
     *pte = *pte | PTE_COW;
 
     /*Increase the reference count for each page*/
-    void *pfa;
+    pde_t *pfa;
     *pfa = *pte & 0x11111000;
-    kincrement(pfa);
+    kincrement((void *)pfa);
     //NOTE : Have to check again whether the input for kincrement
 
   }
@@ -446,9 +446,12 @@ void pagefault (uint err){
 
       //Change d to writable again
       *d = *d | PTE_W;
+      //decrement the original page
+      kdecrement(va);
     }
     else{
-      *pte = *pte |PTE_W;
+      *pte = *pte & (!(PTE_COW)); // remove the PTE_COW flag.
+      *pte = *pte | PTE_W;        // add the PTE_W flag.
     }
     //Decrease the count.
     kdecrement(pa);
