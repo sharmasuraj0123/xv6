@@ -52,50 +52,7 @@ trap(struct trapframe *tf)
     if (tf->err != FEC_WR)
       exit();
 
-    //Obtain the virtual adress of the page.
-    proc * currproc = myproc();
-    uint va = rcr2();
-    uint pa , flags;
-    pte_t *pte , *d;
-    char * mem;
-
-    // Calculating the PTE from its virtual address
-    if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
-      panic("pagefault: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("pagefault: page not present");
-
-    // Checking for the COW bit.
-    if(*pte & PTE_COW){
-
-      // Copying the virtual address and making a new instance of it.
-      pa = PTE_ADDR(*pte);
-      flags = PTE_FLAGS(*pte);
-
-      if((run *)pa->kpg_count> 1){
-
-        // d is the new instance of the page descriptor.
-        if((mem = kalloc()) == 0)
-          panic("LOL");
-        memmove(mem, (char*)P2V(pa), PGSIZE);
-        if(mappages(d, (void*)va, PGSIZE, V2P(mem), flags) < 0)
-          panic("lol2");
-
-        //Change d to writable again
-        *d = *d | PTE_W;
-
-      }
-      else{
-        *pte = *pte |PTE_W;
-      }
-      //Decrease the count.
-      kdecrement(pa);
-
-    }
-    else{
-      //Exit it
-      panic("Page Fault Error");
-    }
+    pagefault(tf->err);
 
 
     if(myproc()->killed)

@@ -348,8 +348,7 @@ cowuvm(pde_t *pgdir, uint sz)
 {
   pde_t *d;
   pte_t *pte;
-  uint pa, i, flags;
-  char *mem;
+
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -363,12 +362,13 @@ cowuvm(pde_t *pgdir, uint sz)
     //NOTE: DOES NOT contain special cases.
 
     /* Changing the PTE to read only */
-    pte = pte & 0xfffffffc;
+    *pte = *pte & 0xfffffffc;
     /*Adding COW to each entry*/
-    pte = pte | PTE_COW;
+    *pte = *pte | PTE_COW;
 
     /*Increase the reference count for each page*/
-    void * pfa = pte & 0x11111000
+    void *pfa;
+    *pfa = *pte & 0x11111000;
     kincrement(pfa);
     //NOTE : Have to check again whether the input for kincrement
 
@@ -414,6 +414,51 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     va = va0 + PGSIZE;
   }
   return 0;
+}
+
+void pagefault (uint err){
+  // Copying the virtual address and making a new instance of it.
+  //Obtain the virtual adress of the page.
+  struct proc * currproc = myproc();
+  uint va = rcr2();
+  uint pa , flags;
+  pte_t *pte , *d;
+  char * mem;
+
+  // Calculating the PTE from its virtual address
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
+    panic("pagefault: pte should exist");
+  if(!(*pte & PTE_P))
+    panic("pagefault: page not present");
+
+  // Checking for the COW bit.
+  if(*pte & PTE_COW){
+
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if((struct run *)pa->kpg_count> 1){
+      // d is the new instance of the page descriptor.
+      if((mem = kalloc()) == 0)
+        panic("LOL");
+      memmove(mem, (char*)P2V(pa), PGSIZE);
+      if(mappages(d, (void*)va, PGSIZE, V2P(mem), flags) < 0)
+        panic("lol2");
+
+      //Change d to writable again
+      *d = *d | PTE_W;
+    }
+    else{
+      *pte = *pte |PTE_W;
+    }
+    //Decrease the count.
+    kdecrement(pa);
+
+  }
+  else{
+    //Exit it
+    panic("Page Fault Error");
+  }
+
 }
 
 // Blank page.
