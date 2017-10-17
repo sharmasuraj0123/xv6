@@ -348,30 +348,35 @@ cowuvm(pde_t *pgdir, uint sz)
 {
   pde_t *d;
   pte_t *pte;
-  int i;
+  uint pa, i, flags;
 
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
+      panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
+      panic("cowuvm: page not present");
 
     /*COW Implementation*/
     //NOTE: DOES NOT contain special cases.
 
-    /* Changing the PTE to read only */
+    /* Changing the PTE to read only & Adding COW to each entry*/
     *pte = *pte & 0xfffffffc;
-    /*Adding COW to each entry*/
     *pte = *pte | PTE_COW;
 
-    /*Increase the reference count for each page*/
-    pde_t *pfa;
-    *pfa = *pte & 0x11111000;
-    kincrement((void *)pfa);
-    //NOTE : Have to check again whether the input for kincrement
+    //Extrracting the exact Physical Address & Flags.
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
 
+    // mappages creates a new PTE for the process
+    if(mappages(d, (void*)i, PGSIZE, V2P(pa), flags) < 0)
+      panic("lol2");
+
+    /*Increase the reference count for each page*/
+    uint  pfa = pa>>PGSHIFT;
+    kincrement((void *)&(pfa));
+    //NOTE : Have to check again whether the input for kincrement
   }
   return d;
 }
@@ -419,11 +424,13 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
-  struct proc * currproc = myproc();
-  uint va = rcr2();
-  uint pa , flags;
-  pte_t *pte , *d;
-  char * mem;
+  struct proc * currproc;
+  uint va,pa;
+  pte_t *pte;
+
+
+  va = rcr2();
+  currproc = myproc();
 
   // Calculating the PTE from its virtual address
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
@@ -431,31 +438,33 @@ void pagefault (uint err){
   if(!(*pte & PTE_P))
     panic("pagefault: page not present");
 
-  // Checking for the COW bit.
-  if(*pte & PTE_COW){
-
+  // Checking for the COW bit & that the pages are read-only
+  if((*pte & PTE_COW) && !(*pte & PTE_W)){
     pa = PTE_ADDR(*pte);
-    flags = PTE_FLAGS(*pte);
-    if((struct run *)pa->kpg_count> 1){
-      // d is the new instance of the page descriptor.
+    uint pfa = pa>>PGSHIFT;
+
+    uint kpg_count= get_kpg_count((void *)&pfa);
+
+    //IF copying needs to be done
+    if(kpg_count> 1){
+      char * mem;
+
       if((mem = kalloc()) == 0)
         panic("LOL");
       memmove(mem, (char*)P2V(pa), PGSIZE);
-      if(mappages(d, (void*)va, PGSIZE, V2P(mem), flags) < 0)
-        panic("lol2");
-
       //Change d to writable again
-      *d = *d | PTE_W;
+      *pte = *pte | PTE_W;
+
       //decrement the original page
-      kdecrement(va);
+      kdecrement((void *)&(pfa));
     }
-    else{
+    else if (kpg_count ==1){
       *pte = *pte & (!(PTE_COW)); // remove the PTE_COW flag.
       *pte = *pte | PTE_W;        // add the PTE_W flag.
     }
-    //Decrease the count.
-    kdecrement(pa);
-
+    else{
+      //LAter for edge-cases
+    }
   }
   else{
     //Exit it
