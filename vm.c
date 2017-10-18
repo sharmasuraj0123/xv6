@@ -463,7 +463,7 @@ void pagefault (uint err){
       *pte = *pte | PTE_W;        // add the PTE_W flag.
     }
     else{
-      //LAter for edge-cases
+      //Later for edge-cases
     }
   }
   else{

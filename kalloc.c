@@ -70,9 +70,11 @@ kfree(char *v)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = (struct run*)v;
- if(r->kpg_count !=1)
-	panic("kfree");
-  r->kpg_count =0;
+
+ // if(r->kpg_count !=1)
+ // panic("kfree");
+ //  r->kpg_count =0;
+
   r->next = kmem.freelist;
   kmem.freelist = r;
   if(kmem.use_lock)
@@ -92,7 +94,7 @@ kalloc(void)
   r = kmem.freelist;
   if(r)
     kmem.freelist = r->next;
-   r->kpg_count =1;
+   //r->kpg_count =1;
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
