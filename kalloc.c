@@ -15,8 +15,10 @@ extern char end[]; // first address after kernel loaded from ELF file
 
 struct run {
   struct run *next;
-  int kpg_count; // This will take care of the count.
 };
+ // This will take care of the count.
+ //An array for all the possible pa.
+int kpg_count[PHYSTOP >> PGSHIFT];
 
 struct {
   struct spinlock lock;
@@ -71,12 +73,9 @@ kfree(char *v)
     acquire(&kmem.lock);
   r = (struct run*)v;
 
- // if(r->kpg_count !=1)
- // panic("kfree");
- //  r->kpg_count =0;
-
   r->next = kmem.freelist;
   kmem.freelist = r;
+  kpg_count[(int)(V2P(r) >> PGSHIFT )]= 0;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -92,9 +91,10 @@ kalloc(void)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r){
     kmem.freelist = r->next;
-   //r->kpg_count =1;
+    kpg_count[(int)(V2P(r) >> PGSHIFT )]= 1;
+  }
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
@@ -104,19 +104,9 @@ kalloc(void)
 // of the page.
 void kincrement(char * v){
 
-  struct run *r;
-
-  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-    panic("kfree");
-
- // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
-
-  r = (struct run*)v;
-  r->kpg_count++;
+  kpg_count[(int)v]++;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -124,32 +114,13 @@ void kincrement(char * v){
 // This is a helper function to decrement the count
 // of the page.
 void kdecrement(char * v){
-
-  struct run *r;
-
-  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-    panic("kfree");
-
- // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
-
-  r = (struct run*)v;
-  r->kpg_count--;
+  kpg_count[(int)v]--;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
+
 uint get_kpg_count(char *v){
-  struct run *r;
-
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  r = (struct run*)v;
-  uint count = r->kpg_count;
-  if(kmem.use_lock)
-    release(&kmem.lock);
-
-  return count;
+  return kpg_count[(int)v];
 }

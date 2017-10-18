@@ -365,20 +365,27 @@ cowuvm(pde_t *pgdir, uint sz)
     *pte = *pte & 0xfffffffc;
     *pte = *pte | PTE_COW;
 
-    //Extrracting the exact Physical Address & Flags.
+    //Extrracting the exact Physical Address value & Flags.
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
 
     // mappages creates a new PTE for the process
-    if(mappages(d, (void*)i, PGSIZE, V2P(pa), flags) < 0)
-      panic("lol2");
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
 
     /*Increase the reference count for each page*/
     uint  pfa = pa>>PGSHIFT;
-    kincrement((void *)&(pfa));
+    kincrement((void *)(pfa));
     //NOTE : Have to check again whether the input for kincrement
   }
+
+  lcr3(V2P(pgdir));
   return d;
+
+  bad:
+    freevm(d);
+    lcr3(V2P(pgdir));
+    return 0;
 }
 
 // Map user virtual address to kernel address.
@@ -443,7 +450,7 @@ void pagefault (uint err){
     pa = PTE_ADDR(*pte);
     uint pfa = pa>>PGSHIFT;
 
-    uint kpg_count= get_kpg_count((void *)&pfa);
+    uint kpg_count= get_kpg_count((void *)pfa);
 
     //IF copying needs to be done
     if(kpg_count> 1){
@@ -452,11 +459,17 @@ void pagefault (uint err){
       if((mem = kalloc()) == 0)
         panic("LOL");
       memmove(mem, (char*)P2V(pa), PGSIZE);
-      //Change d to writable again
-      *pte = *pte | PTE_W;
+
+      //Have to change the new PTE
+      // *pte = V2P(mem);
+      // //Change it to writable again & AlLocated
+      // *pte = *pte | PTE_W;
+      // *pte = *pte | PTE_P;
+
+      *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
       //decrement the original page
-      kdecrement((void *)&(pfa));
+      kdecrement((void *)(pfa));
     }
     else if (kpg_count ==1){
       *pte = *pte & (!(PTE_COW)); // remove the PTE_COW flag.
@@ -465,12 +478,14 @@ void pagefault (uint err){
     else{
       //Later for edge-cases
     }
+
   }
   else{
     //Exit it
-    panic("Page Fault Error");
+    panic("pagefault: Page Fault Error");
   }
-
+  //NOTE: FLUSHING TO BE CHANGED.
+   lcr3(V2P(currproc->pgdir));
 }
 
 // Blank page.
