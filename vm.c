@@ -374,8 +374,8 @@ cowuvm(pde_t *pgdir, uint sz)
       goto bad;
 
     /*Increase the reference count for each page*/
-    uint  pfa = pa>>PGSHIFT;
-    kincrement((void *)(pfa));
+    //uint  pfa = pa>>PGSHIFT;
+    kincrement((void *)(pa));
     //NOTE : Have to check again whether the input for kincrement
   }
 
@@ -432,15 +432,16 @@ void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
   struct proc * currproc;
+  struct proc * parentproc;
   uint va,pa;
   pte_t *pte;
 
 
   va = rcr2();
   currproc = myproc();
-
+  parentproc = currproc->parent;
   // Calculating the PTE from its virtual address
-  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
+  if((pte = walkpgdir(parentproc->pgdir, (void *) va, 0)) == 0)
     panic("pagefault: pte should exist");
   if(!(*pte & PTE_P))
     panic("pagefault: page not present");
@@ -460,16 +461,10 @@ void pagefault (uint err){
         panic("LOL");
       memmove(mem, (char*)P2V(pa), PGSIZE);
 
-      //Have to change the new PTE
-      // *pte = V2P(mem);
-      // //Change it to writable again & AlLocated
-      // *pte = *pte | PTE_W;
-      // *pte = *pte | PTE_P;
-
       *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
       //decrement the original page
-      kdecrement((void *)(pfa));
+      kdecrement((void *)(pa));
     }
     else if (kpg_count ==1){
       *pte = *pte & (!(PTE_COW)); // remove the PTE_COW flag.
@@ -478,14 +473,14 @@ void pagefault (uint err){
     else{
       //Later for edge-cases
     }
-
+    //NOTE: FLUSHING TO BE CHANGED.
+     lcr3(V2P(currproc->pgdir));
   }
   else{
     //Exit it
     panic("pagefault: Page Fault Error");
   }
-  //NOTE: FLUSHING TO BE CHANGED.
-   lcr3(V2P(currproc->pgdir));
+
 }
 
 // Blank page.
