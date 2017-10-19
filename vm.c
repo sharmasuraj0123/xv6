@@ -270,8 +270,13 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
+
+      kdecrement(pa);
+      if(get_kpg_count(pa)==0){
       char *v = P2V(pa);
       kfree(v);
+    }
+    
       *pte = 0;
     }
   }
@@ -471,7 +476,7 @@ void pagefault (uint err){
 
     //IF copying needs to be done
     if(kpg_count> 1){
-        cprintf("COUNT IS GREATHER THAN 1\n\n\n\n\n\n\n");
+        //cprintf("COUNT IS GREATHER THAN 1\n\n\n\n\n\n\n");
       char * mem;
       if((mem = kalloc()) == 0)
         panic("LOL");
@@ -481,13 +486,12 @@ void pagefault (uint err){
       kdecrement(pa);
     }
     else if (kpg_count ==1){
-      cprintf("COUNT IS 1\n\n\n\n\n\n\n");
+      //cprintf("COUNT IS 1\n\n\n\n\n\n\n");
       *pte = *pte & (~(PTE_COW)); // remove the PTE_COW flag.
       *pte = *pte | PTE_W;        // add the PTE_W flag.
     }
     else{
       //Later for edge-cases
-
       panic("pagefault: Should not be here");
     }
     //NOTE: FLUSHING TO BE CHANGED.
