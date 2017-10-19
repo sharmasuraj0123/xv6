@@ -362,7 +362,7 @@ cowuvm(pde_t *pgdir, uint sz)
     //NOTE: DOES NOT contain special cases.
 
     /* Changing the PTE to read only & Adding COW to each entry*/
-    *pte = *pte & 0xfffffffc;
+    *pte = *pte & ~PTE_W;
     *pte = *pte | PTE_COW;
 
     //Extrracting the exact Physical Address value & Flags.
@@ -373,9 +373,19 @@ cowuvm(pde_t *pgdir, uint sz)
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
 
+    // Making the child Read only & PTE COW.
+    pte_t * cpte;
+    if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
+        panic("cowuvm: Child PTE should exist");
+    if(!(*cpte & PTE_P))
+        panic("cowuvm: Child page not present");
+    /* Changing the PTE to read only & Adding COW to each entry*/
+    *cpte = *cpte & ~PTE_W;
+    *cpte = *cpte | PTE_COW;
+
     /*Increase the reference count for each page*/
     //uint  pfa = pa>>PGSHIFT;
-    kincrement((void *)(pa));
+    kincrement(pa);
     //NOTE : Have to check again whether the input for kincrement
   }
 
@@ -432,46 +442,53 @@ void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
   struct proc * currproc;
-  struct proc * parentproc;
+  //struct proc * parentproc;
   uint va,pa;
   pte_t *pte;
 
 
   va = rcr2();
   currproc = myproc();
-  parentproc = currproc->parent;
+  //parentproc = currproc->parent;
+  if(currproc == 0){
+    cprintf("pagefault with no user process from cpu\n");
+    panic("pagefault");
+  }
+
   // Calculating the PTE from its virtual address
-  if((pte = walkpgdir(parentproc->pgdir, (void *) va, 0)) == 0)
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
     panic("pagefault: pte should exist");
   if(!(*pte & PTE_P))
     panic("pagefault: page not present");
 
+
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
-    pa = PTE_ADDR(*pte);
-    uint pfa = pa>>PGSHIFT;
 
-    uint kpg_count= get_kpg_count((void *)pfa);
+
+    pa = PTE_ADDR(*pte);
+    uint kpg_count= get_kpg_count(pa);
 
     //IF copying needs to be done
     if(kpg_count> 1){
+        cprintf("COUNT IS GREATHER THAN 1\n\n\n\n\n\n\n");
       char * mem;
-
       if((mem = kalloc()) == 0)
         panic("LOL");
       memmove(mem, (char*)P2V(pa), PGSIZE);
-
       *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
-
       //decrement the original page
-      kdecrement((void *)(pa));
+      kdecrement(pa);
     }
     else if (kpg_count ==1){
-      *pte = *pte & (!(PTE_COW)); // remove the PTE_COW flag.
+      cprintf("COUNT IS 1\n\n\n\n\n\n\n");
+      *pte = *pte & (~(PTE_COW)); // remove the PTE_COW flag.
       *pte = *pte | PTE_W;        // add the PTE_W flag.
     }
     else{
       //Later for edge-cases
+
+      panic("pagefault: Should not be here");
     }
     //NOTE: FLUSHING TO BE CHANGED.
      lcr3(V2P(currproc->pgdir));

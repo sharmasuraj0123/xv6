@@ -77,7 +77,8 @@ kfree(char *v)
   r->next = kmem.freelist;
 
   kmem.freelist = r;
-  kpg_count[(int)(V2P(r) >> PGSHIFT )]= 0;
+
+  //kpg_count[(int)(V2P(r))>>PGSHIFT]= 0;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -95,7 +96,7 @@ kalloc(void)
   r = kmem.freelist;
   if(r){
     kmem.freelist = r->next;
-    kpg_count[(int)(V2P(r) >> PGSHIFT )]= 1;
+    kpg_count[(int)(V2P(r))>>PGSHIFT]= 1;
   }
   if(kmem.use_lock)
     release(&kmem.lock);
@@ -104,25 +105,32 @@ kalloc(void)
 
 // This is a helper function to increment the count
 // of the page.
-void kincrement(char * v){
+void kincrement(uint v){
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  kpg_count[(int)v]++;
+  kpg_count[v>>PGSHIFT]++;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
 
 // This is a helper function to decrement the count
 // of the page.
-void kdecrement(char * v){
+void kdecrement(uint v){
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  kpg_count[(int)v]--;
+  kpg_count[v>>PGSHIFT]--;
   if(kmem.use_lock)
     release(&kmem.lock);
 }
 
-uint get_kpg_count(char *v){
-  return kpg_count[(int)v];
+uint get_kpg_count(uint v){
+
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+   uint count = kpg_count[v>>PGSHIFT];
+  if(kmem.use_lock)
+    release(&kmem.lock);
+
+  return count;
 }

@@ -68,9 +68,9 @@ char*           kalloc(void);
 void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
-void            kincrement(char*);
-void            kdecrement(char*);
-uint            get_kpg_count(char *);
+void            kincrement(uint);
+void            kdecrement(uint);
+uint            get_kpg_count(uint);
 // kbd.c
 void            kbdintr(void);
 
