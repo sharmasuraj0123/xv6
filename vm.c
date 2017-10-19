@@ -273,10 +273,9 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
       kdecrement(pa);
       if(get_kpg_count(pa)==0){
-      char *v = P2V(pa);
-      kfree(v);
+        char *v = P2V(pa);
+        kfree(v);
     }
-    
       *pte = 0;
     }
   }
@@ -295,9 +294,10 @@ freevm(pde_t *pgdir)
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
-    }
+        char * v = P2V(PTE_ADDR(pgdir[i]));
+        kfree(v);
+
+  }
   }
   kfree((char*)pgdir);
 }
@@ -461,10 +461,13 @@ void pagefault (uint err){
   }
 
   // Calculating the PTE from its virtual address
-  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0)
-    panic("pagefault: pte should exist");
-  if(!(*pte & PTE_P))
-    panic("pagefault: page not present");
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
+        || !(*pte & PTE_U) ||!(*pte & PTE_P)){
+          cprintf("pid %d %s: illegal memory access on addr 0x%x--kill proc\n",
+          currproc->pid, currproc->name, va);
+          currproc->killed = 1;
+          return;
+        }
 
 
   // Checking for the COW bit & that the pages are read-only
