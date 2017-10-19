@@ -447,32 +447,30 @@ void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
   struct proc * currproc;
-  //struct proc * parentproc;
+
   uint va,pa;
   pte_t *pte;
 
 
   va = rcr2();
   currproc = myproc();
-  //parentproc = currproc->parent;
+
   if(currproc == 0){
     cprintf("pagefault with no user process from cpu\n");
     panic("pagefault");
   }
 
   // Calculating the PTE from its virtual address
+  //Just in case for the illegal access of the memory.
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
         || !(*pte & PTE_U) ||!(*pte & PTE_P)){
-          cprintf("pid %d %s: illegal memory access on addr 0x%x--kill proc\n",
-          currproc->pid, currproc->name, va);
-          currproc->killed = 1;
-          return;
+        currproc->killed = 1;
+        return;
         }
 
 
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
-
 
     pa = PTE_ADDR(*pte);
     uint kpg_count= get_kpg_count(pa);
