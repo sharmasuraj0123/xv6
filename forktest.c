@@ -48,9 +48,33 @@ forktest(void)
   printf(1, "fork test OK\n");
 }
 
+
+void
+forktest2(void)
+{
+
+  int i = 0;
+  int pid;
+  pid = fork();
+  if(pid >0){
+    i=1;
+  }
+  wait();
+  if (pid == 0) {
+    if(i == 0){
+      printf(1,"parent copy did not change");
+    }
+    else{
+      printf(1,"parent copy changed");
+    }
+  }
+}
+
+
 int
 main(void)
 {
+  forktest2();
   forktest();
   exit();
 }

@@ -507,67 +507,6 @@ void pagefault (uint err){
 }
 
 
-void addressTest(){
-
-  pde_t *pgdir;
-  uint pa, i=0, cpa;
-  int pid;
-  pte_t *pte;
-  struct proc * currproc;
-  currproc = myproc();
-  pgdir = currproc->pgdir;
-  
-  if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-    panic("copyuvm: pte should exist");
-  if(!(*pte & PTE_P))
-    panic("copyuvm: page not present");
-  pa = PTE_ADDR(*pte);
-
-  pid = fork();
-  if(pid<0){
-    panic("fork error");
-  }
-
-  if(pid>0){
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
-
-    if (PTE_ADDR(*pte) == pa)
-      cprintf("the physical addresses are the same");
-    else{
-      cprintf("the addresses are not the same, we copied without write");
-      exit();
-    }
-    //preform a write
-    cpa = PTE_ADDR(*pte);
-
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
-
-    if (cpa == pa){
-      cprintf(" error! the physical addresses are the same, we did not copy");
-      exit();
-    }
-    else
-      cprintf("the addresses are not the same");
-
-  }
-  wait();
-  
-
-}
-
-
-
-
-
-
-
-
 // Blank page.
 // Blank page.
 // Blank page.
