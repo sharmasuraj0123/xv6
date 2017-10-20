@@ -513,6 +513,9 @@ void addressTest(){
   uint pa, i=0, cpa;
   int pid;
   pte_t *pte;
+  struct proc * currproc;
+  currproc = myproc();
+  pgdir = currproc->pgdir;
   
   if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
     panic("copyuvm: pte should exist");
