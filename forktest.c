@@ -84,10 +84,10 @@ forktest3(void)
   char buf[10]={'\0'};
   int pid;
   int n=0;
-  fd = open("wolfietest.c",O_RDONLY);
-
+  fd = open("./wolfie.txt",O_RDONLY);
+  
   if (fd < 0)
-    printf(1, "fd not valid");
+    printf(1, "fd not valid\n");
   pid = fork();
   if(pid > 0)
     close(fd);
@@ -103,10 +103,53 @@ forktest3(void)
   }
 }
 
+//read a file in a parent and read in the child and see if the contents are the same.
+void
+forktest4(void)
+{
+
+  int fd;
+  fd = open("wolfietest.c",O_RDONLY);
+  char buf[10]={'\0'};
+  int n = 0;
+  int pid;
+    
+  if (fd < 0)
+    printf(1, "fd not valid\n");
+  n=read(fd, buf, sizeof(buf));
+  if (n<0){
+    printf(1,"couldn't read from file\n");
+  }
+  pid = fork();
+  if (pid > 0){
+    char buf2[10]={'\0'};
+    int t = 0;
+    t = read(fd, buf, sizeof(buf));
+
+    if (t != n){
+      printf(1, "same number of bytes were not read\n");
+      exit();
+    }
+    int  i = 0;
+    while (i<sizeof(buf)){
+      if(buf[i]!=buf2[i]){
+        printf(1, "same bytes were not read\n");
+        exit();
+      }
+      i++;
+    }
+  }
+  if (pid == 0)
+    wait();
+
+}
+
+
 
 int
 main(void)
 {
+  forktest4();
   forktest3();
   forktest2();
   forktest();
