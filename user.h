@@ -23,6 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+void *vdso_entry(int);
 
 // ulib.c
 int stat(char*, struct stat*);
@@ -37,3 +38,6 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+uint vdso_getticks();
+uint vdso_getpid();
+

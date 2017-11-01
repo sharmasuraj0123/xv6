@@ -17,3 +17,6 @@ mkfs
 .project
 .cproject
 .settings/
+vdso_impl
+vdso_impl.out
+

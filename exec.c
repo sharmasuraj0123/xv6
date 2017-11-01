@@ -87,6 +87,9 @@ exec(char *path, char **argv)
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;
 
+  // allocate vdso pages
+  allocvdso(pgdir, myproc());
+
   // Save program name for debugging.
   for(last=s=path; *s; s++)
     if(*s == '/')

@@ -6,6 +6,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "vdso.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -381,6 +382,73 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   }
   return 0;
 }
+
+
+extern void *vdso_text_page;
+extern vdso_ticks_page_t *vdso_ticks_page;
+extern char _binary_vdso_impl_start[], _binary_vdso_impl_size[];
+
+int
+allocvdso(pde_t *pgdir, struct proc *p) {
+
+  // STEP 1: mapping VDSO code
+  // allocate a page for vdso code page, if not already allocated
+  // this will be shared across all processes
+  if (0 == vdso_text_page) {
+    vdso_text_page = kalloc();
+    if (! vdso_text_page)
+      goto fail;
+
+    // copy the vdso code to the page
+    memmove(vdso_text_page, _binary_vdso_impl_start, (int)_binary_vdso_impl_size);
+  }
+
+  // map the vdso code page to the address space (as read-only)
+  if ((int)_binary_vdso_impl_size > PGSIZE)
+    panic("vdso text larger than a page");
+  if (mappages(pgdir, (void *)VDSOTEXT, PGSIZE, V2P(vdso_text_page), PTE_U) < 0)
+    goto fail;
+
+  // increment the reference counter because the page is mapped to a new address space
+  // YOUR CODE HERE...
+
+
+
+  // STEP 2: mapping data page for vdso_getpid()
+  // allocate a physical page to hold pid
+  // there will be a *different* page for each process
+  // YOUR CODE HERE...
+
+  // write the pid to this page
+  // YOUR CODE HERE...
+
+  // map the page at the correct address in the user-mode address space (as read-only)
+  // YOUR CODE HERE...
+
+
+
+  // STEP 3: mapping data page for vdso_getticks()
+  // allocate a page for ticks page, if not already allocated
+  // this page will be *shared* across all processes
+  if (0 == vdso_ticks_page) {
+    vdso_ticks_page = (vdso_ticks_page_t *)kalloc();
+    if (! vdso_ticks_page)
+      goto fail;
+    memset(vdso_ticks_page, 0, PGSIZE);
+  }
+
+  // map the page at the correct address in the user-mode address space (as read-only)
+  // YOUR CODE HERE...
+
+  // increment the reference counter because the page is mapped to a new address space
+  // YOUR CODE HERE...
+
+  return 0;
+
+fail:
+  return -1;
+}
+
 
 // Blank page.
 // Blank page.

@@ -30,6 +30,7 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
+	sysvdso.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -79,12 +80,17 @@ AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
-CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
-#CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer
-CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+CFLAGS_BASE = -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+#CFLAGS_BASE = -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer
+CFLAGS_BASE += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+CFLAGS = -fno-pic $(CFLAGS_BASE)
+CFLAGS_PIC = -fPIC $(CFLAGS_BASE)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
+USERTEXT = 0x1000
+USERVDSO = 0x80000000
+VDSOTEXT = 0x7FFFD000
 
 xv6.img: bootblock kernel fs.img
 	dd if=/dev/zero of=xv6.img count=10000
@@ -116,8 +122,15 @@ initcode: initcode.S
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 
-kernel: $(OBJS) entry.o entryother initcode kernel.ld
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
+vdso_impl: vdso_impl_entry.S vdso_impl.c
+	$(CC) $(CFLAGS_PIC) -nostdinc -I. -c vdso_impl_entry.S
+	$(CC) $(CFLAGS_PIC) -nostdinc -I. -c vdso_impl.c
+	$(LD) $(LDFLAGS) -N -Ttext $(VDSOTEXT) -o vdso_impl.out vdso_impl_entry.o vdso_impl.o
+	$(OBJCOPY) -S -O binary vdso_impl.out vdso_impl
+	$(OBJDUMP) -S vdso_impl.out > vdso_impl.asm
+
+kernel: $(OBJS) entry.o entryother initcode vdso_impl kernel.ld
+	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode -b binary vdso_impl entryother
 	$(OBJDUMP) -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
@@ -142,7 +155,7 @@ vectors.S: vectors.pl
 ULIB = ulib.o usys.o printf.o umalloc.o
 
 _%: %.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
+	$(LD) $(LDFLAGS) -N -e main -Ttext $(USERTEXT) -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
@@ -186,7 +199,7 @@ fs.img: mkfs README $(UPROGS)
 clean: 
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
-	initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \
+	vdso_impl vdso_impl.out initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \
 	.gdbinit \
 	$(UPROGS)
 

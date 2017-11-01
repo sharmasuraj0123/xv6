@@ -198,6 +198,12 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+  // allocate vdso pages
+  // should logically do this in copyuvm() above,
+  // but new process struct proc is not available there
+  // and did not want to change copyuvm()'s signature
+  allocvdso(np->pgdir, np);
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 

@@ -3,6 +3,7 @@
 #include "fcntl.h"
 #include "user.h"
 #include "x86.h"
+#include "vdso.h"
 
 char*
 strcpy(char *s, char *t)
@@ -102,4 +103,28 @@ memmove(void *vdst, void *vsrc, int n)
   while(n-- > 0)
     *dst++ = *src++;
   return vdst;
+}
+
+uint vdso_getticks() {
+  static vdso_getticks_t _getticks_func = 0;
+
+  // upon the first use, get the entry from the kernel
+  if (0 == _getticks_func) {
+    _getticks_func = vdso_entry(VDSO_GETTICKS);
+  }
+
+  // call the function
+  return _getticks_func();
+}
+
+uint vdso_getpid() {
+  static vdso_getpid_t _getpid_func = 0;
+
+  // upon the first use, get the entry from the kernel
+  if (0 == _getpid_func) {
+    _getpid_func = vdso_entry(VDSO_GETPID);
+  }
+
+  // call the function
+  return _getpid_func();
 }

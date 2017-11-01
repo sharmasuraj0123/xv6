@@ -50,6 +50,7 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      inc_vdso_ticks();
       wakeup(&ticks);
       release(&tickslock);
     }
