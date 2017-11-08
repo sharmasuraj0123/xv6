@@ -104,7 +104,11 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+<<<<<<< HEAD
 extern int sys_vdso_entry(void);
+=======
+extern int sys_wolfie(void);
+>>>>>>> lab1
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -128,7 +132,11 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+<<<<<<< HEAD
 [SYS_vdso_entry]  sys_vdso_entry,
+=======
+[SYS_wolfie]  sys_wolfie,
+>>>>>>> lab1
 };
 
 void

@@ -20,4 +20,8 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+<<<<<<< HEAD
 #define SYS_vdso_entry 23
+=======
+#define SYS_wolfie 22
+>>>>>>> lab1

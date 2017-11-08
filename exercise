@@ -1,0 +1,25 @@
+Exercise 3
+
+The code responsible for readsect is:
+
+00007c90 <readsect>:
+
+// Read a single sector at offset into dst.
+void
+readsect(void *dst, uint offset)
+{
+    7c90:	55                   	push   %ebp
+    7c91:	89 e5                	mov    %esp,%ebp
+    7c93:	57                   	push   %edi
+    7c94:	53                   	push   %ebx
+    7c95:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+  // Issue command.
+  waitdisk();
+    7c98:	e8 e1 ff ff ff       	call   7c7e <waitdisk>
+}
+
+The kernel starts at the jump statement which is at 0x7dae
+
+Exercise 5
+
+The bootlaoder won't load from the kernel because the address specified is incorrect.

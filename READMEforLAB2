@@ -1,0 +1,43 @@
+README for LAB 2
+
+I have completed this lab with the help of Rahul Verma, Since he was my partner initially.
+
+Files Included:
+  vm.c
+  proc.c
+  taps.c
+  def.h
+  kalloc.c
+  mmu.h
+
+Approach:
+    First I started as in part 1 to add the reference count to the physical page. Initially I decided to add the count feild to struct run.
+    But later realised that will be incorrect since it will not be possible to access the struct in future.
+    Hence, for the reference count I created an array which the same size as the top of the kernal which will be able to keep
+    an count of all physical pages that are mapped and reused.
+    I shifted it by >>PHYSHIFT because since the last 12 bits of the memory address will always be 0, since it is aligned.
+
+    After the reference count, I created the helper methods to make increment and decrement the count.
+
+    After looking at the fork() implementation I realised that the page table part and copying them is done by the copyuvm function.
+    Hence, the only change in fork() was to replace copyuvm to cowuvm.
+
+    FOR cowuvm, I copied the initial implementation of copyuvm and after understanding the code, just retained the mapping part
+    and new page table entry part and deleted the rest of it. Changed all the pte new one and the old one to read only and added the
+    PTE_COW flag to it.
+
+    After completed this added a new section in the trap handler, which changed the way it handled pagefault.
+
+    Once pagefault is hit, it goes into the pagefault(uint err) in vm.c, the reason I had to make this function in vm.c was because,
+    inorder to see if was an actual pagefault or due to COW implementation I had to look at the pte, which could only be Accessed
+    using walkpgdir() which was a static function in vm.c
+
+    Once we have checked that all the flags are correct and the program is a COW we make a copy of all it pages and change the pte,
+    I used the code same as the copyuvm of the original implementation used to copy those page table entries.
+
+    Hence, thats how I implemented the COWUVM function.
+
+    Thank you.
+
+    Sincerely
+    Suraj

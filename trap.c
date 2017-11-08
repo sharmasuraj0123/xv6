@@ -45,6 +45,24 @@ trap(struct trapframe *tf)
     return;
   }
 
+  if(tf->trapno == T_PGFLT){
+
+    //NOTE: Edge Cases will be handled later, just want the basic cases to work.
+
+    // Check that the page has write fault for the user
+    // NOTE : ADD the the different modes.
+    // if (tf->err != FEC_WR)
+    //   exit();
+
+    pagefault(tf->err);
+
+
+    // if(myproc()->killed)
+    //   exit();
+        /*Fill in the implementation here.*/
+    return;
+  }
+
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){

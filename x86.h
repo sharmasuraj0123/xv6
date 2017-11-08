@@ -147,7 +147,11 @@ lcr3(uint val)
 static inline void
 invlpg(void *addr)
 {
+<<<<<<< HEAD
         __asm __volatile("invlpg (%0)" : : "r" (addr) : "memory");
+=======
+  __asm __volatile("invlpg (%0)" : : "r" (addr) : "memory");
+>>>>>>> lab1
 }
 
 // Layout of the trap frame built on the stack by the

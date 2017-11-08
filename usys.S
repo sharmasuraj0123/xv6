@@ -29,4 +29,8 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+<<<<<<< HEAD
 SYSCALL(vdso_entry)
+=======
+SYSCALL(wolfie)
+>>>>>>> lab1

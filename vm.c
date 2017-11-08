@@ -1,3 +1,4 @@
+
 #include "param.h"
 #include "types.h"
 #include "defs.h"
@@ -271,8 +272,12 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
-      char *v = P2V(pa);
-      kfree(v);
+
+      kdecrement(pa);
+      if(get_kpg_count(pa)==0){
+        char *v = P2V(pa);
+        kfree(v);
+    }
       *pte = 0;
     }
   }
@@ -291,9 +296,10 @@ freevm(pde_t *pgdir)
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
-      char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
-    }
+        char * v = P2V(PTE_ADDR(pgdir[i]));
+        kfree(v);
+
+  }
   }
   kfree((char*)pgdir);
 }
@@ -338,9 +344,65 @@ copyuvm(pde_t *pgdir, uint sz)
   }
   return d;
 
+
 bad:
   freevm(d);
   return 0;
+}
+
+pde_t*
+cowuvm(pde_t *pgdir, uint sz)
+{
+  pde_t *d;
+  pte_t *pte;
+  uint pa, i, flags;
+
+  if((d = setupkvm()) == 0)
+    return 0;
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+      panic("cowuvm: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("cowuvm: page not present");
+
+    /*COW Implementation*/
+    //NOTE: DOES NOT contain special cases.
+
+    /* Changing the PTE to read only & Adding COW to each entry*/
+    *pte = *pte & ~PTE_W;
+    *pte = *pte | PTE_COW;
+
+    //Extrracting the exact Physical Address value & Flags.
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+
+    // mappages creates a new PTE for the process
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+
+    // Making the child Read only & PTE COW.
+    pte_t * cpte;
+    if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
+        panic("cowuvm: Child PTE should exist");
+    if(!(*cpte & PTE_P))
+        panic("cowuvm: Child page not present");
+    /* Changing the PTE to read only & Adding COW to each entry*/
+    *cpte = *cpte & ~PTE_W;
+    *cpte = *cpte | PTE_COW;
+
+    /*Increase the reference count for each page*/
+    //uint  pfa = pa>>PGSHIFT;
+    kincrement(pa);
+    //NOTE : Have to check again whether the input for kincrement
+  }
+
+  lcr3(V2P(pgdir));
+  return d;
+
+  bad:
+    freevm(d);
+    lcr3(V2P(pgdir));
+    return 0;
 }
 
 // Map user virtual address to kernel address.
@@ -383,6 +445,7 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+<<<<<<< HEAD
 
 extern void *vdso_text_page;
 extern vdso_ticks_page_t *vdso_ticks_page;
@@ -447,10 +510,71 @@ allocvdso(pde_t *pgdir, struct proc *p) {
 
 fail:
   return -1;
+=======
+void pagefault (uint err){
+  // Copying the virtual address and making a new instance of it.
+  //Obtain the virtual adress of the page.
+  struct proc * currproc;
+
+  uint va,pa;
+  pte_t *pte;
+
+
+  va = rcr2();
+  currproc = myproc();
+
+  if(currproc == 0){
+    cprintf("pagefault with no user process from cpu\n");
+    panic("pagefault");
+  }
+
+  // Calculating the PTE from its virtual address
+  //Just in case for the illegal access of the memory.
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
+        || !(*pte & PTE_U) ||!(*pte & PTE_P)){
+        currproc->killed = 1;
+        return;
+        }
+
+
+  // Checking for the COW bit & that the pages are read-only
+  if((*pte & PTE_COW) && !(*pte & PTE_W)){
+
+    pa = PTE_ADDR(*pte);
+    uint kpg_count= get_kpg_count(pa);
+
+    //IF copying needs to be done
+    if(kpg_count> 1){
+        //cprintf("COUNT IS GREATHER THAN 1\n\n\n\n\n\n\n");
+      char * mem;
+      if((mem = kalloc()) == 0)
+        panic("LOL");
+      memmove(mem, (char*)P2V(pa), PGSIZE);
+      *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
+      //decrement the original page
+      kdecrement(pa);
+    }
+    else if (kpg_count ==1){
+      //cprintf("COUNT IS 1\n\n\n\n\n\n\n");
+      *pte = *pte & (~(PTE_COW)); // remove the PTE_COW flag.
+      *pte = *pte | PTE_W;        // add the PTE_W flag.
+    }
+    else{
+      //Later for edge-cases
+      panic("pagefault: Should not be here");
+    }
+    //NOTE: FLUSHING TO BE CHANGED.
+     lcr3(V2P(currproc->pgdir));
+  }
+  else{
+    //Exit it
+    panic("pagefault: Page Fault Error");
+  }
+
+>>>>>>> lab1
 }
 
 
 // Blank page.
 // Blank page.
 // Blank page.
-
