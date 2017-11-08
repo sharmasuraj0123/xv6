@@ -60,7 +60,7 @@ argptr(int n, char **pp, int size)
 {
   int i;
   struct proc *curproc = myproc();
- 
+
   if(argint(n, &i) < 0)
     return -1;
   if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
@@ -104,11 +104,9 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-<<<<<<< HEAD
 extern int sys_vdso_entry(void);
-=======
 extern int sys_wolfie(void);
->>>>>>> lab1
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -132,11 +130,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-<<<<<<< HEAD
 [SYS_vdso_entry]  sys_vdso_entry,
-=======
 [SYS_wolfie]  sys_wolfie,
->>>>>>> lab1
 };
 
 void

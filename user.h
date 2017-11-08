@@ -23,11 +23,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-<<<<<<< HEAD
 void *vdso_entry(int);
-=======
 int wolfie(void *buf, uint size);
->>>>>>> lab1
+
 
 // ulib.c
 int stat(char*, struct stat*);
@@ -44,4 +42,3 @@ void free(void*);
 int atoi(const char*);
 uint vdso_getticks();
 uint vdso_getpid();
-

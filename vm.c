@@ -445,8 +445,6 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-<<<<<<< HEAD
-
 extern void *vdso_text_page;
 extern vdso_ticks_page_t *vdso_ticks_page;
 extern char _binary_vdso_impl_start[], _binary_vdso_impl_size[];
@@ -510,7 +508,8 @@ allocvdso(pde_t *pgdir, struct proc *p) {
 
 fail:
   return -1;
-=======
+}
+
 void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
@@ -571,7 +570,6 @@ void pagefault (uint err){
     panic("pagefault: Page Fault Error");
   }
 
->>>>>>> lab1
 }
 
 

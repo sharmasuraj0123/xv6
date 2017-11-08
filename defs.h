@@ -187,15 +187,11 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
-<<<<<<< HEAD
 int             allocvdso(pde_t *pgdir, struct proc *p);
-
 // sysvdso.c
 void            inc_vdso_ticks();
-
-=======
 void            pagefault(uint err);
->>>>>>> lab1
+
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -204,6 +204,7 @@ fork(void)
   // and did not want to change copyuvm()'s signature
   allocvdso(np->pgdir, np);
 
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 

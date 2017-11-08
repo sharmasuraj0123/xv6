@@ -78,15 +78,11 @@ kfree(char *v)
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
-<<<<<<< HEAD
 
   // Lab2: because we moved 'runs' to kmem
   //r = (struct run*)v;
   r = &kmem.runs[(V2P(v) / PGSIZE)];
-=======
   r = (struct run*)v;
-
->>>>>>> lab1
   r->next = kmem.freelist;
 
   kmem.freelist = r;
@@ -149,6 +145,5 @@ uint get_kpg_count(uint v){
    uint count = kpg_count[v>>PGSHIFT];
   if(kmem.use_lock)
     release(&kmem.lock);
-
   return count;
 }
