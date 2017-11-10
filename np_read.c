@@ -14,5 +14,7 @@ main(int argc, char **argv)
   np = 0x0;
   char a = *np;
   printf(1,"The character at memory Address 0 is: %c\n", a);
+
+
   return 0;
 }

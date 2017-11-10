@@ -41,7 +41,11 @@ exec(char *path, char **argv)
   // Load program into memory.
   //0th Page should not be accessed.
   //Hence, Start the program at PAGE[1]
-  sz = PGSIZE;
+  //Load an empty Page and make it unusable.
+  sz = 0;
+  if((sz = allocuvm(pgdir,sz,PGSIZE))==0)
+    goto bad;
+  clearpteu(pgdir, 0);
 
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))

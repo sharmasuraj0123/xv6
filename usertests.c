@@ -1579,6 +1579,7 @@ validatetest(void)
     kill(pid);
     wait();
 
+
     // try to crash the kernel by passing in a bad string pointer
     if(link("nosuchfile", (char*)p) != -1){
       printf(stdout, "link should not succeed\n");

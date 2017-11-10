@@ -357,7 +357,6 @@ cowuvm(pde_t *pgdir, uint sz)
   pte_t *pte;
   uint pa, i, flags;
 
-
   if((d = setupkvm()) == 0)
     return 0;
 
@@ -372,13 +371,10 @@ cowuvm(pde_t *pgdir, uint sz)
 
     /*COW Implementation*/
     //NOTE: DOES NOT contain special cases.
-
     /* Changing the PTE to read only & Adding COW to each entry*/
     *pte = *pte & ~PTE_W;
     *pte = *pte | PTE_COW;
-
-    //Extrracting the exact Physical Address value & Flags.
-    pa = PTE_ADDR(*pte);
+    pa = PTE_ADDR(*pte);  //Extrracting the exact Physical Address value & Flags.
     flags = PTE_FLAGS(*pte);
 
     // mappages creates a new PTE for the process
@@ -400,6 +396,8 @@ cowuvm(pde_t *pgdir, uint sz)
     kincrement(pa);
     //NOTE : Have to check again whether the input for kincrement
   }
+
+
 
   lcr3(V2P(pgdir));
   return d;
@@ -528,8 +526,12 @@ void pagefault (uint err){
     panic("pagefault");
   }
   // Calculating the PTE from its virtual address
-  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE){
-        cprintf("Illegal Access of memory\n");
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
+  ){
+    cprintf("pid %d %s: trap %d err %d on cpu %d "
+          "eip 0x%x addr 0x%x--kill proc\n",
+          currproc->pid, currproc->name, currproc->tf->trapno,
+            currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
         currproc->killed = 1;
         return;
         }
@@ -555,16 +557,16 @@ void pagefault (uint err){
 
   //To make sure the page has been allocated.
   //To Handle null pointer dereferences.
-  if(!(*pte & PTE_P)){
-    cprintf("Page not present\n");
+  if(!(*pte & PTE_P)||!(*pte & PTE_U)){
+    cprintf("pid %d %s: trap %d err %d on cpu %d "
+				  "eip 0x%x addr 0x%x--kill proc\n",
+				  currproc->pid, currproc->name, currproc->tf->trapno,
+            currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
+    //cprintf("PTE: %d",*pte);
     currproc->killed = 1;
     return;
   }
-  if(!(*pte & PTE_U)){
-    cprintf("This is not in user-mode\n");
-    currproc->killed = 1;
-    return;
-  }
+
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
     pa = PTE_ADDR(*pte);

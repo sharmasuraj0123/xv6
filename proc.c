@@ -186,7 +186,7 @@ fork(void)
     return -1;
   }
 
-  // Copy proces s state from proc.
+  // Copy process state from proc.
   if((np->pgdir = cowuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
