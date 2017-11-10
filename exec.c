@@ -41,7 +41,7 @@ exec(char *path, char **argv)
   // Load program into memory.
   //0th Page should not be accessed.
   //Hence, Start the program at PAGE[1]
-  sz = 0;
+  sz = PGSIZE;
 
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
@@ -112,7 +112,7 @@ exec(char *path, char **argv)
   //Set the values of top and bottom of the stack.
   //curproc->vma_top = sz - PGSIZE;
   //curproc->vma_bottom = sz;
-  
+
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;

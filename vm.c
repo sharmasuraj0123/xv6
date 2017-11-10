@@ -362,9 +362,9 @@ cowuvm(pde_t *pgdir, uint sz)
     return 0;
 
   //Make the first Page unreadable
-  //clearpteu(pgdir, 0);
+  clearpteu(pgdir, 0);
   //Start from assigning the appropriate Flags to rest pages.
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -517,10 +517,8 @@ void pagefault (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
   struct proc * currproc;
-
   uint va,pa;
   pte_t *pte;
-
 
   va = rcr2();
   currproc = myproc();
@@ -529,16 +527,14 @@ void pagefault (uint err){
     cprintf("pagefault with no user process from cpu\n");
     panic("pagefault");
   }
-
   // Calculating the PTE from its virtual address
-  //Just in case for the illegal access of the memory.
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE){
         cprintf("Illegal Access of memory\n");
         currproc->killed = 1;
         return;
         }
-
   //Inorder to handle Automatic Stack Allocation
+
   // if(currproc->tf->esp < currproc->vma_top){
   //   cprintf("It need more space\n");
   //   // If maximum stack capacity is reached.
@@ -555,18 +551,24 @@ void pagefault (uint err){
   //   return;
   // }
   //
+
+
   //To make sure the page has been allocated.
-  if(!(*pte & PTE_U) ||!(*pte & PTE_P)){
-    cprintf("Page has not been allocated\n");
+  //To Handle null pointer dereferences.
+  if(!(*pte & PTE_P)){
+    cprintf("Page not present\n");
+    currproc->killed = 1;
+    return;
+  }
+  if(!(*pte & PTE_U)){
+    cprintf("This is not in user-mode\n");
     currproc->killed = 1;
     return;
   }
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
-
     pa = PTE_ADDR(*pte);
     uint kpg_count= get_kpg_count(pa);
-
     //IF copying needs to be done
     if(kpg_count> 1){
         //cprintf("COUNT IS GREATHER THAN 1\n\n\n\n\n\n\n");
@@ -592,21 +594,13 @@ void pagefault (uint err){
   }
   else{
     //Exit it
-
     panic("pagefault: Page Fault Error");
   }
-
 }
-void stackoverflow (uint err){
 
+void stackoverflow (uint err){
   // Copying the virtual address and making a new instance of it.
   //Obtain the virtual adress of the page.
-
-
-
-
-
-
 }
 
 
