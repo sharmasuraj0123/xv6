@@ -190,7 +190,8 @@ void            clearpteu(pde_t *pgdir, char *uva);
 int             allocvdso(pde_t *pgdir, struct proc *p);
 // sysvdso.c
 void            inc_vdso_ticks();
-void            pagefault(uint err);
+void            pagefault(uint);
+void            stackoverflow (uint);
 
 
 // number of elements in fixed-size array

@@ -72,7 +72,6 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-
   // Fill with junk to catch dangling refs.
   memset(v, 1, PGSIZE);
 
@@ -82,7 +81,6 @@ kfree(char *v)
   // Lab2: because we moved 'runs' to kmem
   //r = (struct run*)v;
   r = &kmem.runs[(V2P(v) / PGSIZE)];
-  r = (struct run*)v;
   r->next = kmem.freelist;
 
   kmem.freelist = r;
@@ -104,16 +102,21 @@ kalloc(void)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
+
   if(r){
     kmem.freelist = r->next;
     kpg_count[(int)(V2P(r))>>PGSHIFT]= 1;
   }
+
+  rv = r ? P2V((r - kmem.runs) * PGSIZE) : r;
+  kpg_count[(int)(V2P(rv))>>PGSHIFT]= 1;
+
   if(kmem.use_lock)
     release(&kmem.lock);
 
   // Lab2: because we moved 'runs' to kmem
   //return (char*)r;
-  rv = r ? P2V((r - kmem.runs) * PGSIZE) : r;
+
   return rv;
 }
 

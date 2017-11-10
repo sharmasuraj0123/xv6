@@ -149,8 +149,6 @@ invlpg(void *addr)
 {
 
         __asm __volatile("invlpg (%0)" : : "r" (addr) : "memory");
-
-  __asm __volatile("invlpg (%0)" : : "r" (addr) : "memory");
 }
 
 // Layout of the trap frame built on the stack by the

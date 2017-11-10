@@ -359,7 +359,7 @@ cowuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -444,7 +444,6 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   }
   return 0;
 }
-
 extern void *vdso_text_page;
 extern vdso_ticks_page_t *vdso_ticks_page;
 extern char _binary_vdso_impl_start[], _binary_vdso_impl_size[];
@@ -473,7 +472,7 @@ allocvdso(pde_t *pgdir, struct proc *p) {
   // increment the reference counter because the page is mapped to a new address space
   // YOUR CODE HERE...
 
-
+  kincrement(V2P(vdso_text_page));
 
   // STEP 2: mapping data page for vdso_getpid()
   // allocate a physical page to hold pid
@@ -497,7 +496,6 @@ allocvdso(pde_t *pgdir, struct proc *p) {
       goto fail;
     memset(vdso_ticks_page, 0, PGSIZE);
   }
-
   // map the page at the correct address in the user-mode address space (as read-only)
   // YOUR CODE HERE...
 
@@ -527,15 +525,41 @@ void pagefault (uint err){
     panic("pagefault");
   }
 
+
+
+
+
   // Calculating the PTE from its virtual address
   //Just in case for the illegal access of the memory.
-  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
-        || !(*pte & PTE_U) ||!(*pte & PTE_P)){
+  if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE){
+        cprintf("Illegal Access of memory\n");
         currproc->killed = 1;
         return;
         }
 
-
+  //Inorder to handle Automatic Stack Allocation
+  // if(currproc->tf->esp < currproc->vma_top){
+  //   cprintf("It need more space\n");
+  //   // If maximum stack capacity is reached.
+  //   if (currproc->vma_top - currproc->vma_bottom == MAX_STACK+PGSIZE){
+  //     cprintf("Cannot give more space\n");
+  //     currproc->killed = 1;
+  //     return;
+  //   }
+  //   //Increase the stackspace.
+  //   allocuvm(currproc->pgdir,currproc->vma_top-PGSIZE,currproc->vma_top);
+  //   //Change the top and make it unusable (guard).
+  //   currproc->vma_top = currproc->vma_top - PGSIZE;
+  //   clearpteu(currproc->pgdir, (char*)(currproc->vma_top));
+  //   return;
+  // }
+  //
+  //To make sure the page has been allocated.
+  if(!(*pte & PTE_U) ||!(*pte & PTE_P)){
+    cprintf("Page has not been allocated\n");
+    currproc->killed = 1;
+    return;
+  }
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
 
@@ -567,8 +591,21 @@ void pagefault (uint err){
   }
   else{
     //Exit it
+
     panic("pagefault: Page Fault Error");
   }
+
+}
+
+void stackoverflow (uint err){
+
+  // Copying the virtual address and making a new instance of it.
+  //Obtain the virtual adress of the page.
+
+
+
+
+
 
 }
 

@@ -39,7 +39,9 @@ exec(char *path, char **argv)
     goto bad;
 
   // Load program into memory.
-  sz = 0;
+  //0th Page should not be accessed.
+  //Hence, Start the program at PAGE[1]
+  sz = PGSIZE;
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
       goto bad;
@@ -63,11 +65,16 @@ exec(char *path, char **argv)
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
   sz = PGROUNDUP(sz);
+  // uint vma = sz + MAX_STACK;
+  // if((sz = allocuvm(pgdir, vma - PGSIZE,  vma)) == 0)
+  //   goto bad;
+
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
-  sp = sz;
 
+  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
+
+  sp = sz;
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
@@ -102,6 +109,9 @@ exec(char *path, char **argv)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+  //Set the values of top and bottom of the stack.
+  curproc->vma_top = sz - PGSIZE;
+  curproc->vma_bottom = sz;
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;

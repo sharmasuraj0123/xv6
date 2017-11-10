@@ -48,6 +48,8 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  uint vma_top;               // Starting address of guard page
+  uint vma_bottom;            // Bottom of the VMA stack (first allocated page)
 };
 
 // Process memory is laid out contiguously, low addresses first:
