@@ -55,9 +55,8 @@ trap(struct trapframe *tf)
     //   exit();
 
     pagefault(tf->err);
-    // if(myproc()->killed)
-    //   exit();
-        /*Fill in the implementation here.*/
+    if(myproc()->killed)
+      exit();
     return;
   }
 

@@ -357,9 +357,14 @@ cowuvm(pde_t *pgdir, uint sz)
   pte_t *pte;
   uint pa, i, flags;
 
+
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = PGSIZE; i < sz; i += PGSIZE){
+
+  //Make the first Page unreadable
+  //clearpteu(pgdir, 0);
+  //Start from assigning the appropriate Flags to rest pages.
+  for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -525,10 +530,6 @@ void pagefault (uint err){
     panic("pagefault");
   }
 
-
-
-
-
   // Calculating the PTE from its virtual address
   //Just in case for the illegal access of the memory.
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE){
@@ -596,7 +597,6 @@ void pagefault (uint err){
   }
 
 }
-
 void stackoverflow (uint err){
 
   // Copying the virtual address and making a new instance of it.

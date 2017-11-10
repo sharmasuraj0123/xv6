@@ -41,7 +41,8 @@ exec(char *path, char **argv)
   // Load program into memory.
   //0th Page should not be accessed.
   //Hence, Start the program at PAGE[1]
-  sz = PGSIZE;
+  sz = 0;
+
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
       goto bad;
@@ -71,7 +72,6 @@ exec(char *path, char **argv)
 
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
-
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
 
   sp = sz;
@@ -110,8 +110,9 @@ exec(char *path, char **argv)
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   //Set the values of top and bottom of the stack.
-  curproc->vma_top = sz - PGSIZE;
-  curproc->vma_bottom = sz;
+  //curproc->vma_top = sz - PGSIZE;
+  //curproc->vma_bottom = sz;
+  
   switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
