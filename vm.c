@@ -317,6 +317,15 @@ clearpteu(pde_t *pgdir, char *uva)
   *pte &= ~PTE_U;
 }
 
+// Clear PTE_P on a page. Used to create an inaccessible
+void clearptep(pde_t *pgdir, char *uva){
+  pte_t *pte;
+  pte = walkpgdir(pgdir, uva, 0);
+  if(pte == 0)
+    panic("clearptep");
+  *pte &= ~PTE_P;
+}
+
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t*
@@ -361,7 +370,7 @@ cowuvm(pde_t *pgdir, uint sz)
     return 0;
 
   //Make the first Page unreadable
-  clearpteu(pgdir, 0);
+  clearptep(pgdir, 0);
   //Start from assigning the appropriate Flags to rest pages.
   for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
@@ -396,9 +405,6 @@ cowuvm(pde_t *pgdir, uint sz)
     kincrement(pa);
     //NOTE : Have to check again whether the input for kincrement
   }
-
-
-
   lcr3(V2P(pgdir));
   return d;
 
@@ -528,13 +534,13 @@ void pagefault (uint err){
   // Calculating the PTE from its virtual address
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
   ){
-    cprintf("pid %d %s: trap %d err %d on cpu %d "
-          "eip 0x%x addr 0x%x--kill proc\n",
-          currproc->pid, currproc->name, currproc->tf->trapno,
-            currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
+    // cprintf("pid %d %s: trap %d err %d on cpu %d "
+    //       "eip 0x%x addr 0x%x--kill proc\n",
+    //       currproc->pid, currproc->name, currproc->tf->trapno,
+    //         currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
         currproc->killed = 1;
         return;
-        }
+      }
   //Inorder to handle Automatic Stack Allocation
 
   // if(currproc->tf->esp < currproc->vma_top){

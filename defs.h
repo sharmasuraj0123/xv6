@@ -187,6 +187,7 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+void            clearptep(pde_t *pgdir, char *uva);
 int             allocvdso(pde_t *pgdir, struct proc *p);
 // sysvdso.c
 void            inc_vdso_ticks();
