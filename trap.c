@@ -45,21 +45,6 @@ trap(struct trapframe *tf)
     return;
   }
 
-  if(tf->trapno == T_PGFLT){
-
-    //NOTE: Edge Cases will be handled later, just want the basic cases to work.
-
-    // Check that the page has write fault for the user
-    // NOTE : ADD the the different modes.
-    // if (tf->err != FEC_WR)
-    //   exit();
-
-    pagefault(tf->err);
-    if(myproc()->killed)
-      exit();
-    return;
-  }
-
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
@@ -93,6 +78,10 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
 
+  case T_PGFLT:
+    pagefault(tf->err);
+    break;
+    
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
       // In kernel, it must be our mistake.

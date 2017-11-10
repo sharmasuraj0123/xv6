@@ -102,14 +102,11 @@ kalloc(void)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
-
+  rv = r ? P2V((r - kmem.runs) * PGSIZE) : r;
   if(r){
     kmem.freelist = r->next;
-    //kpg_count[(int)(V2P(r))>>PGSHIFT]= 1;
+    kpg_count[(int)(V2P(rv))>>PGSHIFT]= 1;
   }
-
-  rv = r ? P2V((r - kmem.runs) * PGSIZE) : r;
-  kpg_count[(int)(V2P(rv))>>PGSHIFT]= 1;
 
   if(kmem.use_lock)
     release(&kmem.lock);
