@@ -49,7 +49,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   uint vma_top;               // Starting address of guard page
-  uint vma_bottom;            // Bottom of the VMA stack (first allocated page)
+  uint vma_bottom;            // Adress where the las page ends
 };
 
 // Process memory is laid out contiguously, low addresses first:

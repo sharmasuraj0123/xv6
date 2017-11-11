@@ -368,28 +368,24 @@ cowuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-
   //Make the first Page unreadable
-  clearptep(pgdir, 0);
+  clearpteu(pgdir, 0);
   //Start from assigning the appropriate Flags to rest pages.
+  //This will not copy the user stack
   for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
-
-    /*COW Implementation*/
     //NOTE: DOES NOT contain special cases.
     /* Changing the PTE to read only & Adding COW to each entry*/
     *pte = *pte & ~PTE_W;
     *pte = *pte | PTE_COW;
     pa = PTE_ADDR(*pte);  //Extrracting the exact Physical Address value & Flags.
     flags = PTE_FLAGS(*pte);
-
     // mappages creates a new PTE for the process
     if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
       goto bad;
-
     // Making the child Read only & PTE COW.
     pte_t * cpte;
     if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
@@ -399,12 +395,39 @@ cowuvm(pde_t *pgdir, uint sz)
     /* Changing the PTE to read only & Adding COW to each entry*/
     *cpte = *cpte & ~PTE_W;
     *cpte = *cpte | PTE_COW;
-
     /*Increase the reference count for each page*/
     //uint  pfa = pa>>PGSHIFT;
     kincrement(pa);
+    cprintf("LOL\n\n");
     //NOTE : Have to check again whether the input for kincrement
   }
+
+  //Now copy the VMA Stack Pages
+  cprintf("vma_top value: %d\n",myproc()->vma_top/PGSIZE);
+  cprintf("vma_bottom value: %d\n",myproc()->vma_bottom/PGSIZE);
+
+  for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
+    //cprintf("vma_bottom value: %d\n",);
+    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+      panic("cowuvm: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("cowuvm: page not present");
+    *pte = *pte & ~PTE_W;
+    *pte = *pte | PTE_COW;
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+    pte_t * cpte;
+    if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
+        panic("cowuvm: Child PTE should exist");
+    if(!(*cpte & PTE_P))
+        panic("cowuvm: Child page not present");
+    *cpte = *cpte & ~PTE_W;
+    *cpte = *cpte | PTE_COW;
+    kincrement(pa);
+  }
+
   lcr3(V2P(pgdir));
   return d;
 
@@ -543,31 +566,48 @@ void pagefault (uint err){
       }
   //Inorder to handle Automatic Stack Allocation
 
-  // if(currproc->tf->esp < currproc->vma_top){
-  //   cprintf("It need more space\n");
-  //   // If maximum stack capacity is reached.
-  //   if (currproc->vma_top - currproc->vma_bottom == MAX_STACK+PGSIZE){
-  //     cprintf("Cannot give more space\n");
-  //     currproc->killed = 1;
-  //     return;
-  //   }
-  //   //Increase the stackspace.
-  //   allocuvm(currproc->pgdir,currproc->vma_top-PGSIZE,currproc->vma_top);
-  //   //Change the top and make it unusable (guard).
-  //   currproc->vma_top = currproc->vma_top - PGSIZE;
-  //   clearpteu(currproc->pgdir, (char*)(currproc->vma_top));
-  //   return;
-  // }
-  //
+
 
 
   //To make sure the page has been allocated.
   //To Handle null pointer dereferences.
-  if(!(*pte & PTE_P)||!(*pte & PTE_U)){
+  if(!(*pte & PTE_P)){
     cprintf("pid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%x--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
-            currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
+            currproc->tf->err, cpuid(), currproc->tf->eip,va);
+    cprintf("PTE: %d\n",*pte);
+    currproc->killed = 1;
+    return;
+  }
+
+  if(!(*pte & PTE_U)){
+
+    //To confirm it is not a NUll Pointer Error.
+    if(va){
+      cprintf("lol\n");
+      // if(currproc->tf->esp < currproc->vma_top){
+      //   cprintf("It need more space\n");
+      //   // If maximum stack capacity is reached.
+      //   if (currproc->vma_top - currproc->vma_bottom == MAX_STACK+PGSIZE){
+      //     cprintf("Cannot give more space\n");
+      //     currproc->killed = 1;
+      //     return;
+      //   }
+      //   //Increase the stackspace.
+      //   allocuvm(currproc->pgdir,currproc->vma_top-PGSIZE,currproc->vma_top);
+      //   //Change the top and make it unusable (guard).
+      //   currproc->vma_top = currproc->vma_top - PGSIZE;
+      //   clearpteu(currproc->pgdir, (char*)(currproc->vma_top));
+      //   return;
+      //}
+
+    }
+
+    cprintf("pid %d %s: trap %d err %d on cpu %d "
+				  "eip 0x%x addr 0x%x--kill proc\n",
+				  currproc->pid, currproc->name, currproc->tf->trapno,
+            currproc->tf->err, cpuid(), currproc->tf->eip,va);
     //cprintf("PTE: %d",*pte);
     currproc->killed = 1;
     return;
