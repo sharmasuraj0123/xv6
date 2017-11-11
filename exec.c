@@ -43,11 +43,12 @@ exec(char *path, char **argv)
   //Hence, Start the program at PAGE[1]
   //Load an empty Page and make it unusable.
   sz = 0;
-  if(curproc->pid){
+
     if((sz = allocuvm(pgdir,sz,PGSIZE))==0)
       goto bad;
       clearpteu(pgdir,0);
-  }
+
+  cprintf("PID: %d\n",curproc->pid);
 
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
@@ -74,20 +75,23 @@ exec(char *path, char **argv)
 
   //Save the size of proc before adding the user stack
   sz = PGROUNDUP(sz);
-
   //The sz does not contain the process stack.
   //Add the process stack to sp
-
-    sp = sz+MAX_STACK+PGSIZE;
-
-  if((sp = allocuvm(pgdir, sp-2*PGSIZE,  sp)) == 0)
+  uint vma;
+  //vma = MAX_STACK-PGSIZE;
+  vma =sz;
+  //vma = PGROUNDUP(vma);
+  if((vma = allocuvm(pgdir, vma,  vma+2*PGSIZE)) == 0)
      goto bad;
-  clearpteu(pgdir, (char*)(sp -2*PGSIZE));
+  clearpteu(pgdir, (char*)(vma-2*PGSIZE));
 
   //Set the values of top and bottom of the stack.
-  curproc->vma_top = sp - 2*PGSIZE;
-  curproc->vma_bottom = sp;
+  curproc->vma_top = vma-2*PGSIZE;
+  curproc->vma_bottom = vma;
+
+  cprintf("vma_top: %d && pgdir : %d\n",curproc->vma_top/PGSIZE,pgdir);
   // Push argument strings, prepare rest of stack in ustack.
+  sp = vma;
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
       goto bad;
@@ -97,7 +101,6 @@ exec(char *path, char **argv)
     ustack[3+argc] = sp;
   }
   ustack[3+argc] = 0;
-
   ustack[0] = 0xffffffff;  // fake return PC
   ustack[1] = argc;
   ustack[2] = sp - (argc+1)*4;  // argv pointer

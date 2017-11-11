@@ -197,6 +197,9 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+  np->vma_bottom = curproc->vma_bottom;
+  np->vma_top = curproc->vma_top;
+  cprintf("MAAAKI\n\n");
   // allocate vdso pages
   // should logically do this in copyuvm() above,
   // but new process struct proc is not available there

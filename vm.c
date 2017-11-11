@@ -365,11 +365,13 @@ cowuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-
   if((d = setupkvm()) == 0)
     return 0;
   //Make the first Page unreadable
-  clearpteu(pgdir, 0);
+
+    //cprintf("No clue\n");
+    clearpteu(pgdir, 0);
+
   //Start from assigning the appropriate Flags to rest pages.
   //This will not copy the user stack
   for(i = PGSIZE; i < sz; i += PGSIZE){
@@ -398,18 +400,20 @@ cowuvm(pde_t *pgdir, uint sz)
     /*Increase the reference count for each page*/
     //uint  pfa = pa>>PGSHIFT;
     kincrement(pa);
-    cprintf("LOL\n\n");
+    //cprintf("LOL\n\n");
     //NOTE : Have to check again whether the input for kincrement
   }
-
+      //cprintf("LOLsasa\n\n");
   //Now copy the VMA Stack Pages
-  cprintf("vma_top value: %d\n",myproc()->vma_top/PGSIZE);
-  cprintf("vma_bottom value: %d\n",myproc()->vma_bottom/PGSIZE);
+  // cprintf("vma_top value: %d\n",myproc()->vma_top/PGSIZE);
+  // cprintf("vma_bottom value: %d\n",myproc()->vma_bottom/PGSIZE);
 
   for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
-    //cprintf("vma_bottom value: %d\n",);
-    if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+    cprintf("vma_i value: %d\n",i/PGSIZE);
+    if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
+
+    cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
     *pte = *pte & ~PTE_W;
@@ -561,6 +565,7 @@ void pagefault (uint err){
     //       "eip 0x%x addr 0x%x--kill proc\n",
     //       currproc->pid, currproc->name, currproc->tf->trapno,
     //         currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
+    cprintf("Thought so\n\n");
         currproc->killed = 1;
         return;
       }
