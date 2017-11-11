@@ -47,9 +47,9 @@ trap(struct trapframe *tf)
 
   switch(tf->trapno){
   case T_PGFLT:
-  cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
-          tf->trapno, cpuid(), tf->eip, rcr2());
-    pagefault(tf->err);
+  // cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
+  //         tf->trapno, cpuid(), tf->eip, rcr2());
+      pagefault(tf->err);
     break;
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){

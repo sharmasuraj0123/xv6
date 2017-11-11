@@ -374,11 +374,14 @@ cowuvm(pde_t *pgdir, uint sz)
 
   //Start from assigning the appropriate Flags to rest pages.
   //This will not copy the user stack
-  for(i = PGSIZE; i < sz; i += PGSIZE){
+  //This has a guard page to avoid last stuff
+  for(i = PGSIZE; i <sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
+
+      //cprintf("vsaluw i: %d && pgdir: %d\n",i,pgdir);
     //NOTE: DOES NOT contain special cases.
     /* Changing the PTE to read only & Adding COW to each entry*/
     *pte = *pte & ~PTE_W;
@@ -403,17 +406,18 @@ cowuvm(pde_t *pgdir, uint sz)
     //cprintf("LOL\n\n");
     //NOTE : Have to check again whether the input for kincrement
   }
+  //Make the guard page Unusable
       //cprintf("LOLsasa\n\n");
   //Now copy the VMA Stack Pages
-  // cprintf("vma_top value: %d\n",myproc()->vma_top/PGSIZE);
-  // cprintf("vma_bottom value: %d\n",myproc()->vma_bottom/PGSIZE);
+  //cprintf("vma_top value: %d\n",myproc()->vma_top);
+  //cprintf("vma_bottom value: %d\n",myproc()->vma_bottom-PGSIZE);
 
   for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
-    cprintf("vma_i value: %d\n",i/PGSIZE);
+    //cprintf("vma_i value: %d\n",i);
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
 
-    cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
+    //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
     *pte = *pte & ~PTE_W;
@@ -558,6 +562,15 @@ void pagefault (uint err){
     cprintf("pagefault with no user process from cpu\n");
     panic("pagefault");
   }
+
+  if(va>= currproc->sz_withoutstack && va <= currproc->vma_top){
+    cprintf("here\n");
+    currproc->killed = 1;
+    currproc->tf->eax = 0;
+    return;
+  }
+
+
   // Calculating the PTE from its virtual address
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
   ){
@@ -569,11 +582,9 @@ void pagefault (uint err){
         currproc->killed = 1;
         return;
       }
+
+
   //Inorder to handle Automatic Stack Allocation
-
-
-
-
   //To make sure the page has been allocated.
   //To Handle null pointer dereferences.
   if(!(*pte & PTE_P)){
@@ -581,7 +592,7 @@ void pagefault (uint err){
 				  "eip 0x%x addr 0x%x--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
             currproc->tf->err, cpuid(), currproc->tf->eip,va);
-    cprintf("PTE: %d\n",*pte);
+    cprintf("usertop: %d && sz_ws: %d\n",currproc->vma_top, currproc->sz_withoutstack);
     currproc->killed = 1;
     return;
   }
@@ -608,7 +619,6 @@ void pagefault (uint err){
       //}
 
     }
-
     cprintf("pid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%x--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
@@ -617,7 +627,6 @@ void pagefault (uint err){
     currproc->killed = 1;
     return;
   }
-
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
     pa = PTE_ADDR(*pte);

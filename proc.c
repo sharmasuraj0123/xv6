@@ -187,19 +187,20 @@ fork(void)
   }
 
   // Copy process state from proc.
-  if((np->pgdir = cowuvm(curproc->pgdir, curproc->sz)) == 0){
+  if((np->pgdir = cowuvm(curproc->pgdir, curproc->sz_withoutstack)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
     return -1;
   }
   np->sz = curproc->sz;
+  np->sz_withoutstack = curproc->sz_withoutstack;
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
   np->vma_bottom = curproc->vma_bottom;
   np->vma_top = curproc->vma_top;
-  cprintf("MAAAKI\n\n");
+  //cprintf("MAAAKI\n\n");
   // allocate vdso pages
   // should logically do this in copyuvm() above,
   // but new process struct proc is not available there
