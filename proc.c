@@ -110,7 +110,6 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
   return p;
 }
 
@@ -122,7 +121,6 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
@@ -156,11 +154,11 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz ;//, sz_all;
+  uint sz;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
-  cprintf("size : %d && n: %d\n",sz/PGSIZE,n/PGSIZE);
+  //cprintf("size : %d && n: %d\n",sz/PGSIZE,n/PGSIZE);
   // if(curproc->vma_top){
   //   if(sz + n >= curproc->vma_top){
   //     cprintf("FUCK ME\n" );
@@ -174,9 +172,11 @@ growproc(int n)
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
-  curproc->sz = sz;
+  //cprintf("sz: %d and growth_size: %d\n",sz/PGSIZE,growth_size/PGSIZE);
+  curproc->sz=sz;
   switchuvm(curproc);
   return 0;
+
 }
 
 // Create a new process copying p as the parent.

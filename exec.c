@@ -78,9 +78,9 @@ exec(char *path, char **argv)
   //The sz does not contain the process stack.
   //Add the process stack to sp
   uint vma;
-  //vma = MAX_STACK+PGROUNDUP(sz)-PGSIZE;
-  vma =sz;
-  vma = PGROUNDUP(vma);
+  vma = PGROUNDUP(sz)+MAX_STACK-PGSIZE;
+  //vma =sz;
+  //vma = PGROUNDUP(vma);
   if((vma = allocuvm(pgdir, vma,  vma+2*PGSIZE)) == 0)
      goto bad;
   clearpteu(pgdir, (char*)(vma-2*PGSIZE));

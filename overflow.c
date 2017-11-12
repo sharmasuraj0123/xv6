@@ -12,7 +12,7 @@ int
 main(int argc, char **argv)
 {
 
-  printf(1,"The result of 10 factorial is %d\n", factorial(5000));
+  printf(1,"The result of 10 factorial is %d\n", factorial(2323));
   return 0;
 }
 

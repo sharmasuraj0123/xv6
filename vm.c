@@ -408,9 +408,9 @@ cowuvm(pde_t *pgdir, uint sz)
       //cprintf("LOLsasa\n\n");
   //Now copy the VMA Stack Pages
   //cprintf("vma_top value: %d\n",0xfe000000/PGSIZE);
-  //cprintf("vma_bottom value: %d\n",myproc()->vma_bottom-PGSIZE);
+  //cprintf("vma_bottom value: %d\n",0xa0000/PGSIZE);
 
-  for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
+  for(i = myproc()->vma_top; i < myproc()->sz; i += PGSIZE){
     //cprintf("vma_i value: %d\n",i);
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
@@ -561,12 +561,12 @@ void pagefault (uint err){
     panic("pagefault");
   }
 
-  if(va>= currproc->sz_withoutstack && va <= currproc->vma_top){
-    cprintf("here\n");
-    currproc->killed = 1;
-    currproc->tf->eax = 0;
-    return;
-  }
+  // if(va>= currproc->sz_withoutstack && va <= currproc->vma_top){
+  // //  cprintf("here\n");
+  //   //currproc->killed = 1;
+  //   //currproc->tf->eax = 0;
+  //   return;
+  // }
 
 
   // Calculating the PTE from its virtual address
@@ -587,43 +587,50 @@ void pagefault (uint err){
   //To Handle null pointer dereferences.
   if(!(*pte & PTE_P)){
     cprintf("pid %d %s: trap %d err %d on cpu %d "
-				  "eip 0x%x addr 0x%x--kill proc\n",
+				  "eip 0x%x addr 0x%d--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
             currproc->tf->err, cpuid(), currproc->tf->eip,va);
-    cprintf("usertop: %d && sz_ws: %d\n",currproc->vma_top/PGSIZE, currproc->sz_withoutstack/PGSIZE);
+    cprintf("usertop: %d && pte: %d\n",currproc->vma_top/PGSIZE, *pte);
     currproc->killed = 1;
     return;
   }
 
   if(!(*pte & PTE_U)){
-
     //To confirm it is not a NUll Pointer Error.
-    if(va){
-      cprintf("lol\n");
-      // if(currproc->tf->esp < currproc->vma_top){
-      //   cprintf("It need more space\n");
-      //   // If maximum stack capacity is reached.
-      //   if (currproc->vma_top - currproc->vma_bottom == MAX_STACK+PGSIZE){
-      //     cprintf("Cannot give more space\n");
-      //     currproc->killed = 1;
-      //     return;
-      //   }
-      //   //Increase the stackspace.
-      //   allocuvm(currproc->pgdir,currproc->vma_top-PGSIZE,currproc->vma_top);
-      //   //Change the top and make it unusable (guard).
-      //   currproc->vma_top = currproc->vma_top - PGSIZE;
-      //   clearpteu(currproc->pgdir, (char*)(currproc->vma_top));
-      //   return;
-      //}
+    if(va>=currproc->vma_top){
+      //Stack needs more space
+      //cprintf("It need more space\n");
 
+      //cprintf("usertop: %d && sz_ws: %d && pte:%d\n",currproc->vma_top, currproc->sz_withoutstack,*pte);
+      // If maximum stack capacity is reached.
+        if (currproc->vma_top <= currproc->sz_withoutstack + PGSIZE){
+          cprintf("Cannot give more space\n");
+          cprintf("pid %d %s: trap %d err %d on cpu %d "
+                "eip 0x%x addr 0x%x--kill proc\n",
+                currproc->pid, currproc->name, currproc->tf->trapno,
+                  currproc->tf->err, cpuid(), currproc->tf->eip,va);
+          currproc->killed = 1;
+          return;
+        }
+        //Increase the stackspace.
+        *pte = (*pte | PTE_U);
+        allocuvm(currproc->pgdir,currproc->vma_top-PGSIZE,currproc->vma_top);
+        //Change the top and make it unusable (guard).
+        currproc->vma_top = currproc->vma_top - PGSIZE;
+        clearpteu(currproc->pgdir, (char*)(currproc->vma_top));
+        //cprintf("usertop: %d && sz_ws: %d\n",currproc->vma_top/PGSIZE, currproc->sz_withoutstack/PGSIZE);
+        return;
     }
-    cprintf("pid %d %s: trap %d err %d on cpu %d "
+  else{
+
+    cprintf("wwpid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%x--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
             currproc->tf->err, cpuid(), currproc->tf->eip,va);
     //cprintf("PTE: %d",*pte);
     currproc->killed = 1;
     return;
+  }
   }
   // Checking for the COW bit & that the pages are read-only
   if((*pte & PTE_COW) && !(*pte & PTE_W)){
