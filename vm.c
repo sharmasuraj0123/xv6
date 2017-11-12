@@ -185,7 +185,6 @@ void
 inituvm(pde_t *pgdir, char *init, uint sz)
 {
   char *mem;
-
   if(sz >= PGSIZE)
     panic("inituvm: more than a page");
   mem = kalloc();
@@ -201,7 +200,6 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
   uint i, pa, n;
   pte_t *pte;
-
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
   for(i = 0; i < sz; i += PGSIZE){
@@ -409,7 +407,7 @@ cowuvm(pde_t *pgdir, uint sz)
   //Make the guard page Unusable
       //cprintf("LOLsasa\n\n");
   //Now copy the VMA Stack Pages
-  //cprintf("vma_top value: %d\n",myproc()->vma_top);
+  //cprintf("vma_top value: %d\n",0xfe000000/PGSIZE);
   //cprintf("vma_bottom value: %d\n",myproc()->vma_bottom-PGSIZE);
 
   for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
@@ -592,7 +590,7 @@ void pagefault (uint err){
 				  "eip 0x%x addr 0x%x--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
             currproc->tf->err, cpuid(), currproc->tf->eip,va);
-    cprintf("usertop: %d && sz_ws: %d\n",currproc->vma_top, currproc->sz_withoutstack);
+    cprintf("usertop: %d && sz_ws: %d\n",currproc->vma_top/PGSIZE, currproc->sz_withoutstack/PGSIZE);
     currproc->killed = 1;
     return;
   }

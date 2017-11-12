@@ -156,10 +156,17 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz;
+  uint sz ;//, sz_all;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
+  cprintf("size : %d && n: %d\n",sz/PGSIZE,n/PGSIZE);
+  // if(curproc->vma_top){
+  //   if(sz + n >= curproc->vma_top){
+  //     cprintf("FUCK ME\n" );
+  //     return -1;
+  //   }
+  // }
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;

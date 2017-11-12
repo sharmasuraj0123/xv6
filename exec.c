@@ -73,14 +73,14 @@ exec(char *path, char **argv)
   // Make the first inaccessible.  Use the second as the user stack.
 
   //Save the size of proc before adding the user stack
-  sz = PGROUNDUP(sz);
+  //sz = PGROUNDUP(sz);
 
   //The sz does not contain the process stack.
   //Add the process stack to sp
   uint vma;
-  vma = MAX_STACK+sz-PGSIZE;
-  //vma =sz;
-  //vma = PGROUNDUP(vma);
+  //vma = MAX_STACK+PGROUNDUP(sz)-PGSIZE;
+  vma =sz;
+  vma = PGROUNDUP(vma);
   if((vma = allocuvm(pgdir, vma,  vma+2*PGSIZE)) == 0)
      goto bad;
   clearpteu(pgdir, (char*)(vma-2*PGSIZE));
