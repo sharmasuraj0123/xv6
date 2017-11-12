@@ -1636,6 +1636,7 @@ bigargtest(void)
   wait();
   fd = open("bigarg-ok", 0);
   if(fd < 0){
+    printf(stdout,"fd : %d\n",fd);
     printf(stdout, "bigarg test failed!\n");
     exit();
   }
@@ -1763,10 +1764,10 @@ main(int argc, char *argv[])
   // concreate();
   // fourfiles();
   // sharedfd();
-  //
-  // bigargtest();
-  // bigwrite();
-  bigargtest();
+
+  //bigargtest();
+  bigwrite();
+  //bigargtest();
   bsstest();
   sbrktest();
   validatetest();

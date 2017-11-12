@@ -572,11 +572,11 @@ void pagefault (uint err){
   // Calculating the PTE from its virtual address
   if((pte = walkpgdir(currproc->pgdir, (void *) va, 0)) == 0 || va>=KERNBASE
   ){
-    // cprintf("pid %d %s: trap %d err %d on cpu %d "
-    //       "eip 0x%x addr 0x%x--kill proc\n",
-    //       currproc->pid, currproc->name, currproc->tf->trapno,
-    //         currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
-    cprintf("Thought so\n\n");
+    cprintf("pid %d %s: trap %d err %d on cpu %d "
+          "eip 0x%x addr 0x%x--kill proc\n",
+          currproc->pid, currproc->name, currproc->tf->trapno,
+            currproc->tf->err, cpuid(), currproc->tf->eip,rcr2());
+    //cprintf("Thought so\n");
         currproc->killed = 1;
         return;
       }
@@ -590,7 +590,7 @@ void pagefault (uint err){
 				  "eip 0x%x addr 0x%d--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
             currproc->tf->err, cpuid(), currproc->tf->eip,va);
-    cprintf("usertop: %d && pte: %d\n",currproc->vma_top/PGSIZE, *pte);
+    cprintf("usertop: %d && sz_w: %d\n",currproc->vma_top, currproc->sz_withoutstack);
     currproc->killed = 1;
     return;
   }
