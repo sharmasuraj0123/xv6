@@ -1,0 +1,53 @@
+README for LAB3
+
+In this lab I have added new things in 3 parts:
+
+Part 1:
+  NULL Pointer Dereferencer:
+    To implement this I only changed two places once in exec and other in cowuvm.
+in exec:
+      Created a new empty page and made it unusable.
+in cowuvm:
+      Started copying pages from PGSIZE so the first page is unusable.
+
+Every time a null address is referenced, it goes to pagefault(), which is a method I made in vm.c
+This method handles all kinds of pagefaults including the COW ones.
+
+And appropriate changes were made in the syscall.c file so that the instruction pointer doesn't go there.
+
+PART 2:
+    Inorder to make the stack grow automatically.
+    I completely changed the memory layout that was initially provided.
+    The new layout is : regular pages + TOTAL STAK + continued rest of pages.
+
+    In this approach the process grows around the stack just like how it does in usually.
+    There are just empty uninitialized pages which get copied separately later.
+
+    I added a new data field to the struct proc (sz_withoutstack), which will keep track the initial sz of proc without stack.
+    This data field is not really that useful, because mostly all it hold is static data.
+
+    This field was introduced because initially I planned my stack to be at the end of user address space,
+    and grow backwards, so this field was responsible for total size.
+    But since, I was having issues to implement that one. Hence I decided to completely change my Implementation.
+    Because I had already done work with my sz_withoutstack, I decided to keep the field and not discard it.
+
+    Changes were made in syscall.c to all the pointers to make sure that they are not in the uninitialized area
+    and crash kernel code.
+
+
+PART 3:
+    Every time allocvdso is called It maps 3 new pages to the pgdir of the process.
+    It only maps the virtual page doesn't really allocate any physical page, for VDSOTEXT & VDSO_GETTICKS
+    But for the part to get pid, it allocates a page in memory and sets the pid of the process to it.
+
+
+I was really short on time, Hence was unable to complete the readme and make test cases for my homework.
+But if there are any issues and mistakes in my implementation, feel free to contact me.
+
+Sincerely
+Suraj
+
+
+NEW Files Included:
+np_read.c - To test Null pointer on reading
+np_write.c - To test null pointer on writing to a null.
