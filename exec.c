@@ -77,6 +77,14 @@ exec(char *path, char **argv)
 
   //The sz does not contain the process stack.
   //Add the process stack to sp
+
+  //VDSO PAGES are put before the stack
+  curproc->sz_withoutstack = sz;
+  // allocate vdso pages
+
+
+
+
   uint vma;
   vma = PGROUNDUP(sz)+MAX_STACK-PGSIZE;
   //vma =sz;
@@ -88,7 +96,7 @@ exec(char *path, char **argv)
   //Set the values of top and bottom of the stack.
   curproc->vma_top = vma-2*PGSIZE;
   curproc->vma_bottom = vma;
-  curproc->sz_withoutstack = sz;
+
   //cprintf("vma_top: %d && pgdir : %d\n",curproc->vma_top,pgdir);
   // Push argument strings, prepare rest of stack in ustack.
   sp = vma;
@@ -109,8 +117,7 @@ exec(char *path, char **argv)
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;
 
-  // allocate vdso pages
-  allocvdso(pgdir, myproc());
+
 
   // Save program name for debugging.
   for(last=s=path; *s; s++)
@@ -124,6 +131,9 @@ exec(char *path, char **argv)
   curproc->sz = vma;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
+
+
+  allocvdso(pgdir, myproc());
 
   switchuvm(curproc);
   freevm(oldpgdir);
