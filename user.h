@@ -53,6 +53,7 @@ void mutex_init(mutex_t *);
 void mutex_lock(mutex_t *);
 int  mutex_trylock(mutex_t *);
 void mutex_unlock(mutex_t *);
+void cv_init(cond_var_t *);
 void cv_wait(cond_var_t *, mutex_t *);
 void cv_bcast(cond_var_t *);
 
