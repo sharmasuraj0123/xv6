@@ -105,6 +105,9 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_vdso_entry(void);
+extern int sys_shmbrk(void);
+extern int sys_futex_wait(void);
+extern int sys_futex_wake(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -129,6 +132,9 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_vdso_entry]  sys_vdso_entry,
+[SYS_shmbrk] sys_shmbrk,
+[SYS_futex_wait] sys_futex_wait,
+[SYS_futex_wake] sys_futex_wake,
 };
 
 void

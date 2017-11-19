@@ -105,7 +105,9 @@ memmove(void *vdst, void *vsrc, int n)
   return vdst;
 }
 
-uint vdso_getticks() {
+uint
+vdso_getticks()
+{
   static vdso_getticks_t _getticks_func = 0;
 
   // upon the first use, get the entry from the kernel
@@ -117,7 +119,9 @@ uint vdso_getticks() {
   return _getticks_func();
 }
 
-uint vdso_getpid() {
+uint
+vdso_getpid()
+{
   static vdso_getpid_t _getpid_func = 0;
 
   // upon the first use, get the entry from the kernel
@@ -128,3 +132,4 @@ uint vdso_getpid() {
   // call the function
   return _getpid_func();
 }
+

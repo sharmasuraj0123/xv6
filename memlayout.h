@@ -4,7 +4,8 @@
 #define DEVSPACE 0xFE000000         // Other devices are at high addresses
 
 // Key addresses for address space layout (see kmap in vm.c for layout)
-#define MAX_STACK 0x100000          // max user-stack size (in bytes)
+#define MAX_STACK  0x100000         // max user-stack size (in bytes)
+#define MAX_SHM   0x1000000         // max shm area size (in bytes)
 #define VDSOTEXT 0x7FFFD000         // VDSO text to be mapped in usermode
 #define KERNBASE 0x80000000         // First kernel virtual address
 #define KERNLINK (KERNBASE+EXTMEM)  // Address where kernel is linked

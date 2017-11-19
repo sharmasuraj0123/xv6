@@ -89,3 +89,24 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_shmbrk(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
+
+int
+sys_futex_wait(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
+
+int
+sys_futex_wake(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
