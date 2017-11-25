@@ -492,6 +492,8 @@ allocvdso(pde_t *pgdir, struct proc *p) {
   // STEP 1: mapping VDSO code
   // allocate a page for vdso code page, if not already allocated
   // this will be shared across all processes
+  if ((int)_binary_vdso_impl_size > PGSIZE)
+    panic("vdso text larger than a page");
   if (0 == vdso_text_page) {
     vdso_text_page = kalloc();
     if (! vdso_text_page)
@@ -501,6 +503,7 @@ allocvdso(pde_t *pgdir, struct proc *p) {
   }
 
   // map the vdso code page to the address space (as read-only)
+
   //NOTE: Worry about the read-only later
   if ((int)_binary_vdso_impl_size > PGSIZE)
     panic("vdso text larger than a page");

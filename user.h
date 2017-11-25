@@ -1,6 +1,12 @@
 struct stat;
 struct rtcdate;
 
+typedef struct {
+} mutex_t;
+
+typedef struct {
+} cond_var_t;
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -25,7 +31,9 @@ int sleep(int);
 int uptime(void);
 void *vdso_entry(int);
 int wolfie(void *buf, uint size);
-
+char* shmbrk(int);
+int futex_wait(int *loc, int val);
+int futex_wake(int *loc);
 
 // ulib.c
 int stat(char*, struct stat*);
@@ -42,3 +50,10 @@ void free(void*);
 int atoi(const char*);
 uint vdso_getticks();
 uint vdso_getpid();
+void mutex_init(mutex_t *);
+void mutex_lock(mutex_t *);
+int  mutex_trylock(mutex_t *);
+void mutex_unlock(mutex_t *);
+void cv_init(cond_var_t *);
+void cv_wait(cond_var_t *, mutex_t *);
+void cv_bcast(cond_var_t *);

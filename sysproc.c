@@ -141,7 +141,7 @@ sys_wolfie(void){
   if(argptr(0,(char**)&buffer,size)<0){
     return -1;
   }
-  
+
   //count how big the picture is.
   int artsize = 0;
   for (artsize = 0; art[artsize] != '\0' ; artsize ++){
@@ -161,3 +161,22 @@ sys_wolfie(void){
 
 }
 
+int sys_shmbrk(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
+
+int
+sys_futex_wait(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
+
+int
+sys_futex_wake(void)
+{
+  // LAB 4: Your Code Here
+  return 0xDEADBEAF;
+}
