@@ -50,7 +50,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   uint vma_top;               // Starting address of guard page
-  uint vma_bottom;            // Adress where the las page ends
+  uint vma_bottom;            // Adress where the last page ends
+  uint shm_start;             // Starting address of shm
+  uint shm_end;               // Where the Shm Ends
 };
 
 // Process memory is laid out contiguously, low addresses first:

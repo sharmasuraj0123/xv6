@@ -36,14 +36,14 @@ fetchstr(uint addr, char **pp)
   char *s, *ep;
   struct proc *curproc = myproc();
   if(addr >= curproc->sz){
-    cprintf("vma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
-    cprintf("addresss : %d\n", addr);
+    // cprintf("vma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
+    // cprintf("addresss : %d\n", addr);
     return -1;
   }
   if(myproc()->pid >2){
-    if(addr >= curproc->sz_withoutstack && addr < curproc->vma_top){
-      cprintf("vma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
-      cprintf("addresss : %d\n", addr);
+    if((addr >= curproc->sz_withoutstack && addr < curproc->vma_top)){
+      // cprintf("vma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
+      // cprintf("addresss : %d\n", addr);
       return -1;
     }
   }
@@ -75,7 +75,7 @@ argptr(int n, char **pp, int size)
     return -1;
   if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz
       || ((uint)i+size >= curproc->sz_withoutstack && (uint)i+size < curproc->vma_top)){
-    cprintf("lols2s argptr\n");
+    //cprintf("lols2s argptr\n");
     return -1;
   }
   *pp = (char*)i;

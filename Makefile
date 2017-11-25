@@ -195,6 +195,7 @@ UPROGS=\
 	_np_write\
 	_overflow\
 	_futextest\
+	_shmbrktest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

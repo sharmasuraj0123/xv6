@@ -164,7 +164,15 @@ sys_wolfie(void){
 int sys_shmbrk(void)
 {
   // LAB 4: Your Code Here
-  return 0xDEADBEAF;
+  int addr;
+  int n;
+  if(argint(0, &n) < 0)
+    return -1;
+  addr = myproc()->shm_end;
+  if(growproc_shm(n) < 0)
+    return -1;
+  return addr;
+  //return 0xDEADBEAF;
 }
 
 int

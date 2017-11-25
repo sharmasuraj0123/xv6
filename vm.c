@@ -378,7 +378,6 @@ cowuvm(pde_t *pgdir, uint sz)
       panic("cowuvm: pte should exist");
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
-
       //cprintf("vsaluw i: %d && pgdir: %d\n",i,pgdir);
     //NOTE: DOES NOT contain special cases.
     /* Changing the PTE to read only & Adding COW to each entry*/
@@ -402,19 +401,56 @@ cowuvm(pde_t *pgdir, uint sz)
     //uint  pfa = pa>>PGSHIFT;
     kincrement(pa);
     //cprintf("LOL\n\n");
-    //NOTE : Have to check again whether the input for kincrement
   }
   //Make the guard page Unusable
-      //cprintf("LOLsasa\n\n");
-  //Now copy the VMA Stack Pages
-  //cprintf("vma_top value: %d\n",0xfe000000/PGSIZE);
-  //cprintf("vma_bottom value: %d\n",0xa0000/PGSIZE);
-
-  for(i = myproc()->vma_top; i < myproc()->sz; i += PGSIZE){
-    //cprintf("vma_i value: %d\n",i);
+  //Now copy the VMA Stack Pages.
+  for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
+    //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
+    if(!(*pte & PTE_P))
+      panic("cowuvm: page not present");
+    *pte = *pte & ~PTE_W;
+    *pte = *pte | PTE_COW;
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+    pte_t * cpte;
+    if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
+        panic("cowuvm: Child PTE should exist");
+    if(!(*cpte & PTE_P))
+        panic("cowuvm: Child page not present");
+    *cpte = *cpte & ~PTE_W;
+    *cpte = *cpte | PTE_COW;
+    kincrement(pa);
+  }
 
+  //Now Copy the SHM Pages.
+  for(i = myproc()->shm_start; i < myproc()->shm_end; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
+      panic("cowuvm: pte should exist");
+    //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
+    if(!(*pte & PTE_P))
+      panic("cowuvm: page not present");
+    *pte = *pte | PTE_SHM;
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0)
+      goto bad;
+    pte_t * cpte;
+    if((cpte = walkpgdir(d, (void *) i, 0)) == 0)
+        panic("cowuvm: Child PTE should exist");
+    if(!(*cpte & PTE_P))
+        panic("cowuvm: Child page not present");
+    *cpte = *cpte | PTE_SHM;
+    kincrement(pa);
+  }
+
+  //Now Whatever is left, the last heap pages.
+  for(i = myproc()->shm_start+MAX_SHM; i < myproc()->sz; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
+      panic("cowuvm: pte should exist");
     //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
@@ -608,7 +644,7 @@ void pagefault (uint err){
     cprintf("pid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%d--kill proc\n",
 				  currproc->pid, currproc->name, currproc->tf->trapno,
-            currproc->tf->err, cpuid(), currproc->tf->eip,va);
+          currproc->tf->err, cpuid(), currproc->tf->eip,va);
     cprintf("usertop: %d && sz_w: %d\n",currproc->vma_top, currproc->sz_withoutstack);
     currproc->killed = 1;
     return;
@@ -619,7 +655,6 @@ void pagefault (uint err){
     if(va>=currproc->vma_top){
       //Stack needs more space
       //cprintf("It need more space\n");
-
       //cprintf("usertop: %d && sz_ws: %d && pte:%d\n",currproc->vma_top, currproc->sz_withoutstack,*pte);
       // If maximum stack capacity is reached.
         if (currproc->vma_top <= currproc->sz_withoutstack + PGSIZE){

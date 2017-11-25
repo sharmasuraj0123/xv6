@@ -82,9 +82,6 @@ exec(char *path, char **argv)
   curproc->sz_withoutstack = sz;
   // allocate vdso pages
 
-
-
-
   uint vma;
   vma = PGROUNDUP(sz)+MAX_STACK-PGSIZE;
   //vma =sz;
@@ -96,10 +93,16 @@ exec(char *path, char **argv)
   //Set the values of top and bottom of the stack.
   curproc->vma_top = vma-2*PGSIZE;
   curproc->vma_bottom = vma;
+  curproc-> shm_start = vma;
+  curproc->shm_end = vma;
+  sp = vma;
+  // Add the space to Allocate SHM Pages.
+
+  uint shm = PGROUNDUP(vma)+MAX_SHM;
 
   //cprintf("vma_top: %d && pgdir : %d\n",curproc->vma_top,pgdir);
   // Push argument strings, prepare rest of stack in ustack.
-  sp = vma;
+
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
       goto bad;
@@ -117,18 +120,20 @@ exec(char *path, char **argv)
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;
 
-
-
   // Save program name for debugging.
   for(last=s=path; *s; s++)
     if(*s == '/')
       last = s+1;
   safestrcpy(curproc->name, last, sizeof(curproc->name));
 
+
+
+
+
   // Commit to the user image.
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
-  curproc->sz = vma;
+  curproc->sz = shm;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
 

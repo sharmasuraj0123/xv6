@@ -158,13 +158,6 @@ growproc(int n)
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
-  //cprintf("size : %d && n: %d\n",sz/PGSIZE,n/PGSIZE);
-  // if(curproc->vma_top){
-  //   if(sz + n >= curproc->vma_top){
-  //     cprintf("FUCK ME\n" );
-  //     return -1;
-  //   }
-  // } 
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -172,11 +165,29 @@ growproc(int n)
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
-  //cprintf("sz: %d and growth_size: %d\n",sz/PGSIZE,growth_size/PGSIZE);
   curproc->sz=sz;
   switchuvm(curproc);
   return 0;
+}
 
+// Grow current process's memory by n bytes.
+// Return 0 on success, -1 on failure.
+int
+growproc_shm(int n)
+{
+  uint sz;
+  struct proc *curproc = myproc();
+  sz = curproc->shm_end;
+  if(n > 0){
+    if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+      return -1;
+  } else if(n < 0){
+    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+      return -1;
+  }
+  curproc->shm_end=sz;
+  switchuvm(curproc);
+  return 0;
 }
 
 // Create a new process copying p as the parent.
