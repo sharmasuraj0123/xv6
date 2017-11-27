@@ -122,7 +122,8 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-
+int             futex_wait(int *loc, int val);
+int             futex_wake(int *loc);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

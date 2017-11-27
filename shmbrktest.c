@@ -6,34 +6,51 @@
 #include "stat.h"
 #include "user.h"
 
+
+void valueinChild();
+void multipledeclaration();
 int
 main(int argc, char **argv)
 {
 
   printf(1,"Testing shmbrk\n");
 
+  valueinChild();
+  multipledeclaration();
+  return 0;
+}
+
+void valueinChild(){
   int * shm = (int *)shmbrk(sizeof(int *));
   uint pid = fork();
   *shm = 10;
   if(!pid){
-    *shm = 89;
+    *shm = 200;
     printf(1,"Value of SHM variable in child :%d\n",*shm);
     exit();
   }
 
   wait();
   printf(1,"Value of SHM variable in parent:%d\n",*shm);
+  if(*shm == 200)
+  printf(1,"Value of SHM variable remains consistent\n");
+}
 
-  pid =fork();
-  if(!pid){
-    printf(1,"Value of SHM variable in child :%d\n",*shm);
-    *shm = 8921;
-    printf(1,"Updated Value of SHM variable in child :%d\n",*shm);
-    exit();
-  }
-  wait();
-  printf(1,"New Value of SHM variable in parent:%d\n",*shm);
+void multipledeclaration(){
+  int * shm = (int *)shmbrk(sizeof(int *));
+  int * shm2 = (int *)shmbrk(sizeof(int *));
+  int * shm3 = (int *)shmbrk(sizeof(int *));
+  int * shm4 = (int *)shmbrk(sizeof(int *));
+  int * shm5 = (int *)shmbrk(sizeof(int *));
+  *shm = 10;
+  *shm2 = 100;
+  *shm3 = 1000;
+  *shm4 = 10000;
+  *shm5 = 100000;
 
-
-  return 0;
+  printf(1,"Value of SHM1 variable in parent:%d\n",*shm);
+  printf(1,"Value of SHM2 variable in parent:%d\n",*shm2);
+  printf(1,"Value of shm3 variable in parent:%d\n",*shm3);
+  printf(1,"Value of SHM4 variable in parent:%d\n",*shm4);
+  printf(1,"Value of SHM5 variable in parent:%d\n",*shm5);
 }

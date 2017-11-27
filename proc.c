@@ -289,6 +289,23 @@ exit(void)
   panic("zombie exit");
 }
 
+int futex_wait(int *loc, int val){
+
+  acquire(&ptable.lock);
+  if(*loc ==val){
+    sleep(loc, &ptable.lock);
+    release(&ptable.lock);
+    return 0;
+  }
+  release(&ptable.lock);
+  return -1;
+}
+
+int futex_wake(int *loc){
+  wakeup(loc);
+  return 0;
+}
+
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
@@ -478,7 +495,6 @@ static void
 wakeup1(void *chan)
 {
   struct proc *p;
-
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
       p->state = RUNNABLE;

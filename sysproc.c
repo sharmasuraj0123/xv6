@@ -179,12 +179,23 @@ int
 sys_futex_wait(void)
 {
   // LAB 4: Your Code Here
-  return 0xDEADBEAF;
+  int *loc;
+  int val;
+  if(argptr(0, (char **)&loc, sizeof(int *)) < 0)
+    return -1;
+  if(argint(1, &val) < 0)
+      return -1;
+
+  return futex_wait(loc,val);
 }
 
 int
 sys_futex_wake(void)
 {
   // LAB 4: Your Code Here
-  return 0xDEADBEAF;
+  int *loc;
+  if(argptr(0, (char **)&loc, sizeof(int *)) < 0)
+    return -1;
+
+  return futex_wake(loc);
 }
