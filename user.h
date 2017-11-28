@@ -2,9 +2,11 @@ struct stat;
 struct rtcdate;
 
 typedef struct {
+  volatile uint locked;       // Is the lock held?
 } mutex_t;
 
 typedef struct {
+  volatile uint locked;       // Is the lock held?
 } cond_var_t;
 
 // system calls

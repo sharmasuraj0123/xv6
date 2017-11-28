@@ -133,3 +133,71 @@ vdso_getpid()
   return _getpid_func();
 }
 
+
+void mutex_init(mutex_t *m){
+  m->locked = 0;
+}
+void mutex_lock(mutex_t *m){
+
+  //pushcli(); // disable interrupts to avoid deadlock.
+
+  //Keep on sleeping until the lock is available.
+  while (xchg(&m->locked, 1) != 0)
+    futex_wait((int *)&(m->locked),1);
+
+}
+int  mutex_trylock(mutex_t *m){
+  if(xchg(&m->locked, 1) != 0)
+    return 0;
+
+  return -1;
+}
+void mutex_unlock(mutex_t *m){
+
+  // Tell the C compiler and the processor to not move loads or stores
+  // past this point, to ensure that all the stores in the critical
+  // section are visible to other cores before the lock is released.
+  // Both the C compiler and the hardware may re-order loads and
+  // stores; __sync_synchronize() tells them both not to.
+  __sync_synchronize();
+  // Release the lock, equivalent to lk->locked = 0.
+  // This code can't use a C assignment, since it might
+  // not be atomic. A real OS would use C atomics here.
+  asm volatile("movl $0, %0" : "+m" (m->locked) : );
+  //popcli();
+  //Wake up all the resources waiting for the lock.
+  futex_wake((int *)&(m->locked));
+}
+void cv_init(cond_var_t *cv){
+  cv->locked = 0;
+}
+void cv_wait(cond_var_t *cv, mutex_t *m){
+  //First thing aquire the m lock.
+  mutex_lock(m);
+  //Try to get the cv lock.
+  while (xchg(&cv->locked, 1) != 0){
+    //If not then first release the lock.
+    mutex_unlock(m);
+    //Then sleep.
+    futex_wait((int *)&(cv->locked),1);
+    //Aquire the mutex lock first thing after wakeup
+    mutex_lock(m);
+  }
+  mutex_unlock(m);
+}
+void cv_bcast(cond_var_t *cv){
+
+  // Tell the C compiler and the processor to not move loads or stores
+  // past this point, to ensure that all the stores in the critical
+  // section are visible to other cores before the lock is released.
+  // Both the C compiler and the hardware may re-order loads and
+  // stores; __sync_synchronize() tells them both not to.
+  __sync_synchronize();
+  // Release the lock, equivalent to lk->locked = 0.
+  // This code can't use a C assignment, since it might
+  // not be atomic. A real OS would use C atomics here.
+  asm volatile("movl $0, %0" : "+m" (cv->locked) : );
+  //popcli();
+  //Wake up all the resources waiting for the lock.
+  futex_wake((int *)&(cv->locked));
+}
