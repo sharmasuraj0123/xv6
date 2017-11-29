@@ -99,7 +99,7 @@ exec(char *path, char **argv)
   // Add the space to Allocate SHM Pages.
 
   uint shm = PGROUNDUP(vma)+MAX_SHM;
-
+  //cprintf("shm_start: %d && Shm : %d\n",vma+MAX_SHM,shm );
   //cprintf("vma_top: %d && pgdir : %d\n",curproc->vma_top,pgdir);
   // Push argument strings, prepare rest of stack in ustack.
 

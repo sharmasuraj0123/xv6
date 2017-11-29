@@ -9,15 +9,28 @@
 
 void valueinChild();
 void multipledeclaration();
+void multipleforktest();
 int
 main(int argc, char **argv)
 {
 
   printf(1,"Testing shmbrk\n");
 
-  valueinChild();
-  multipledeclaration();
+    valueinChild();
+    multipledeclaration();
+  multipleforktest();
   return 0;
+}
+
+void multipleforktest(){
+  int * shm = (int *)shmbrk(4096);
+  int i =0;
+  for(i =0; i <3; i++){
+   fork();
+  }
+  //wait();
+  printf(1,"Hello: %d\n", *shm);
+  exit();
 }
 
 void valueinChild(){

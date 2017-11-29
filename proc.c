@@ -204,13 +204,6 @@ fork(void)
     return -1;
   }
 
-  // Copy process state from proc.
-  if((np->pgdir = cowuvm(curproc->pgdir, curproc->sz_withoutstack)) == 0){
-    kfree(np->kstack);
-    np->kstack = 0;
-    np->state = UNUSED;
-    return -1;
-  }
   np->sz = curproc->sz;
   np->sz_withoutstack = curproc->sz_withoutstack;
   np->parent = curproc;
@@ -218,6 +211,17 @@ fork(void)
 
   np->vma_bottom = curproc->vma_bottom;
   np->vma_top = curproc->vma_top;
+  np->shm_end = curproc->shm_end;
+  np->shm_start = curproc->shm_start;
+  
+  // Copy process state from proc.
+  if((np->pgdir = cowuvm(curproc->pgdir, curproc->sz_withoutstack)) == 0){
+    kfree(np->kstack);
+    np->kstack = 0;
+    np->state = UNUSED;
+    return -1;
+  }
+
   //cprintf("MAAAKI\n\n");
   // allocate vdso pages
   // should logically do this in copyuvm() above,

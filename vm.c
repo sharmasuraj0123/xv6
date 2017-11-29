@@ -404,10 +404,11 @@ cowuvm(pde_t *pgdir, uint sz)
   }
   //Make the guard page Unusable
   //Now copy the VMA Stack Pages.
+  //cprintf("Here now\n");
+
   for(i = myproc()->vma_top; i < myproc()->vma_bottom; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
-    //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
     *pte = *pte & ~PTE_W;
@@ -426,8 +427,9 @@ cowuvm(pde_t *pgdir, uint sz)
     kincrement(pa);
   }
 
+  //cprintf("Here now\n");
   //Now Copy the SHM Pages.
-  for(i = myproc()->shm_start; i < myproc()->shm_end; i += PGSIZE){
+  for(i =myproc()->shm_start; i < myproc()->shm_end; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
     //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
@@ -448,10 +450,12 @@ cowuvm(pde_t *pgdir, uint sz)
   }
 
   //Now Whatever is left, the last heap pages.
-  for(i = myproc()->shm_start+MAX_SHM; i < myproc()->sz; i += PGSIZE){
+  //cprintf("HUH!\n");
+  for(i = PGROUNDUP(myproc()->shm_start)+MAX_SHM; i < myproc()->sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 1)) == 0)
       panic("cowuvm: pte should exist");
-    //cprintf("PTE: %d && pgdir: %d\n",*pte,pgdir);
+    //cprintf("PTE: %d && pgdir: %d \n",*pte,pgdir);
+    //cprintf("&& i:%d && psize: %d",i,myproc()->sz);
     if(!(*pte & PTE_P))
       panic("cowuvm: page not present");
     *pte = *pte & ~PTE_W;
