@@ -30,4 +30,16 @@ They acquire the ptablelock and release at the end, to ensure atomicity.
 
 PART 3:
 
-I used just an int and atomic instruction to implment
+I used just an int and atomic instruction to implments the locks.
+
+I used the xchg(&cv->locked, 1) != 0 to ensure atomicity, if the value hasn't changed.
+Then the process goes to sleep and when it wakes up it tries to acquire mutexLock and returns.
+
+checksum.c:
+For the concurrency Issue, I was unable to resolve the concurrency issue completely, in implementing the
+producer and consumer issue.
+This bug mainly arises when the buffer size is small and is full,
+For some reason when the buffer is full and the producer tries waits to write in it,
+When you increase the buffer size to enough the bug didn't show up.
+The main reason I believe for the bug is maybe I was not properly able to handle the wait condition,
+when the buffer is full it for some reason not always gives the right answer.

@@ -173,7 +173,7 @@ void cv_init(cond_var_t *cv){
 }
 void cv_wait(cond_var_t *cv, mutex_t *m){
   //Try to get the cv lock.
-  if (xchg(&cv->locked, 1) != 0){
+  while (xchg(&cv->locked, 1) != 0){
     mutex_unlock(m);
     //If not then first release the lock.
     //Then sleep.

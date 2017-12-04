@@ -13,10 +13,10 @@
 #define READSIZE 8
 
 typedef struct {
-  char buf[BUFFERSIZE + READSIZE];
+  char buf[BUFFERSIZE];
   int head;
   int tail;
-  char checksum;
+  int checksum;
   cond_var_t *cv;
   mutex_t *m;
   int done;
@@ -43,9 +43,9 @@ main(int argc, char *argv[]) {
   //memset(sa->buf, 0, BUFFERSIZE);
 
   //Also to distinguish between a reader of writer.
-  // int bytes_read =0;
-  // int bytes_written =0;
-  //int i;
+  int bytes_read =0;
+  int bytes_written =0;
+  int i;
 
   mutex_init(sa->m);
   cv_init(sa->cv);
@@ -62,13 +62,14 @@ main(int argc, char *argv[]) {
    printf(1,"dssdsdgh\n" );
 
    int count =1;
-   char ck=0;
+   int ck=0;
   while(count){
     count = read(fd, c, 1);
-    printf(1, "%c",*c);
-    ck+= c[0];
+    //printf(1, "%c",*c);
+    ck+= *c;
   }
   close(fd);
+
   printf(1,"ck %d\n",ck);
 
   int pid;
@@ -78,32 +79,32 @@ main(int argc, char *argv[]) {
   //printf(1,"count: %d\n", count);
 
 
-  if(pid==0)
-    consumer(sa);
-  else
-  producer(sa);
+  // if(pid==0)
+  //   consumer(sa);
+  // else
+  // producer(sa);
 
 
-  // if(pid==0){
-  //   for(i=0; i<3; i++){
-  //     pid =fork();
-    //   if(pid==0){
-    //     bytes_read = -1;
-    //     bytes_written =0;
-    //   }
-    //   else {
-    //    bytes_written = -1;
-    //     bytes_read =0;
-    //   }
-     //}
-    // if(bytes_written==0 && bytes_read ==-1)
-    //   producer();
-    // else consumer();
+  if(pid==0){
+    for(i=0; i<3; i++){
+      pid =fork();
+      if(pid==0){
+        bytes_read = -1;
+        bytes_written =0;
+      }
+      else {
+       bytes_written = -1;
+        bytes_read =0;
+      }
+     }
+    if(bytes_written==0 && bytes_read ==-1)
+      producer(sa);
+    else consumer(sa);
     //testMutextLock(sa);
-  //   while(wait()!= -1)
-  //   ;
-  //   exit();
-  // }
+    while(wait()!= -1)
+    ;
+    exit();
+  }
 
 
 
@@ -136,31 +137,31 @@ void testMutextLock(shared_t *sa){
 
 void consumer(shared_t* sa){
   char nread =0;
-  char checksum = 0;
+  int checksum = 0;
   int i;
 
-while(sa->done !=1){
+while(sa->done !=4){
   mutex_lock(sa->m);
   for (i=0; i < READSIZE;i++){
     //printf(1,"Consumer Starts reading\n");
     //If the Buffer is already empty;
-    if(sa->head== sa->tail){
+    if (sa->head== sa->tail){
       //printf(1,"Here\n");
       // cv_bcast(sa->cv);
       // cv_wait(sa->cv,sa->m);
       //  mutex_unlock(sa->m);
       //  mutex_lock(sa->m);
-      if(sa->done ==1 && (sa->head == sa->tail)){
+      break;
+      if(sa->done ==4 && (sa->head == sa->tail)){
         cv_bcast(sa->cv);
         sa->checksum += checksum;
         printf(1,"hsschecksum: %d\n",sa->checksum);
         return;
       }
-      break;
     }
 
     nread = sa->buf[sa->head%BUFFERSIZE];
-      printf(1,"%c",sa->buf[sa->head%BUFFERSIZE]);
+      //printf(1,"%c",sa->buf[sa->head%BUFFERSIZE]);
     (sa->head)++;
     //sa->head= (sa->head);
     checksum+=nread;
@@ -206,6 +207,7 @@ void producer(shared_t* sa){
       // mutex_unlock(sa->m);
       // mutex_lock(sa->m);
       break;
+
     }
     char c[10];
     count = read(fd, c, 1);
