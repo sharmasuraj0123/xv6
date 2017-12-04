@@ -173,11 +173,11 @@ void cv_init(cond_var_t *cv){
 }
 void cv_wait(cond_var_t *cv, mutex_t *m){
   //Try to get the cv lock.
-  while (xchg(&cv->locked, 1) != 0){
-    //If not then first release the lock.
+  if (xchg(&cv->locked, 1) != 0){
     mutex_unlock(m);
+    //If not then first release the lock.
     //Then sleep.
-    futex_wait((int *)&(cv->locked),0);
+    futex_wait((int *)&(cv->locked),1);
     //Aquire the mutex lock first thing after wakeup
     mutex_lock(m);
   }

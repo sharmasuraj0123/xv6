@@ -21,8 +21,17 @@ fetchint(uint addr, int *ip)
   if(addr >= curproc->sz || addr+4 > curproc->sz || (addr >= curproc->sz_withoutstack &&
   addr < curproc->vma_top) || (addr+4 > curproc->sz_withoutstack &&
   addr +4 <= curproc->vma_top)){
+    cprintf("addresss : %d\n", addr);
     return -1;
   }
+  if(myproc()->pid >2){
+    if((addr >= curproc->shm_end && addr < curproc->shm_start+MAX_SHM)
+  || (addr+4 >= curproc->shm_end && addr+4 < curproc->shm_start+MAX_SHM)){
+      cprintf("addresss : %d\n", addr);
+      return -1;
+    }
+  }
+
   *ip = *(int*)(addr);
   return 0;
 }
@@ -41,9 +50,10 @@ fetchstr(uint addr, char **pp)
     return -1;
   }
   if(myproc()->pid >2){
-    if((addr >= curproc->sz_withoutstack && addr < curproc->vma_top)){
-      // cprintf("vma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
-      // cprintf("addresss : %d\n", addr);
+    if((addr >= curproc->sz_withoutstack && addr < curproc->vma_top)
+  || (addr >= curproc->shm_end && addr < curproc->shm_start+MAX_SHM)){
+      //cprintf("dffddfvma_top ; %d && sz: %d",curproc->vma_top , curproc->sz_withoutstack);
+       cprintf("addresss : %d\n", addr);
       return -1;
     }
   }
@@ -74,8 +84,9 @@ argptr(int n, char **pp, int size)
   if(argint(n, &i) < 0)
     return -1;
   if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz
-      || ((uint)i+size >= curproc->sz_withoutstack && (uint)i+size < curproc->vma_top)){
-    //cprintf("lols2s argptr\n");
+      || ((uint)i+size >= curproc->sz_withoutstack && (uint)i+size < curproc->vma_top)
+    || ((uint)i+size >= curproc->shm_end && (uint)i+size < curproc->shm_start+MAX_SHM)){
+    cprintf("lols2s argptr\n");
     return -1;
   }
   *pp = (char*)i;

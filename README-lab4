@@ -1,0 +1,33 @@
+README LAB 4
+
+PART 1:
+In the first part of the lab I changed the implementation of my memory,
+I added another struct for SHM just after the user stack and before the heap.
+The SHM implementation was exactly identical to that of VMA where only virtual space, has been allocated.
+Every time the user requests space in the area, It allocates a physical page to it.
+I created a system call, where you can specifically add memory in that section from user mode.
+Each different aspects on the process were copied separately in the stack,
+and as soon as the cowuvm() hits the PTE_SHM flag it know to not make the page readonly,
+rather just create a pte using the same physical page and directly map it.
+All the process share the same physical page and have access to read and write on them,
+
+shmbrk() syscall:
+I have not used the shmbrk() function provided int the file,
+Instead I created my own function growproc_shm(), which does the exact same thing.
+The implementation of growproc_shm() is similar to the that of growproc();
+
+
+shmbrktest.c :
+
+This was tested using the  function I made. which basically
+just forks multiple times and edits the value of a shared int and then checks in the parent whether the value was changed or not.
+Since the variable was declared locally in the process, if it wasn't in the shared buffer, it wouldn't change.
+
+
+PART 2:
+Futex_wait and futex_wakeup do exactly what the implementation expects them to do.
+They acquire the ptablelock and release at the end, to ensure atomicity.
+
+PART 3:
+
+I used just an int and atomic instruction to implment
